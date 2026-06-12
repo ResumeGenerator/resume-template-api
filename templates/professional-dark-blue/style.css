@@ -1,0 +1,256 @@
+/* Professional Dark Blue Resume Template Styles */
+
+:root {
+    --primary-color: #1e3a8a;
+    --accent-color: #fbbf24;
+    --light-gray: #f4f4f4;
+    --border-gray: #e5e7eb;
+    --text-dark: #333;
+    --text-muted: #666;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: var(--text-dark);
+    background-color: var(--light-gray);
+}
+
+.resume-container {
+    max-width: 8.5in;
+    height: 11in;
+    background-color: white;
+    margin: 20px auto;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #1e40af 100%);
+    color: white;
+    padding: 40px 30px;
+    text-align: center;
+    border-bottom: 4px solid var(--accent-color);
+}
+
+.header h1 {
+    font-size: 36px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+.headline {
+    font-size: 16px;
+    font-weight: 300;
+    margin-bottom: 12px;
+    opacity: 0.95;
+}
+
+.contact-info {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 13px;
+    margin-top: 12px;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.contact-item a {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+.contact-item a:hover {
+    text-decoration: underline;
+    opacity: 0.8;
+}
+
+.content {
+    flex: 1;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.section {
+    margin-bottom: 16px;
+    page-break-inside: avoid;
+}
+
+.section:last-child {
+    margin-bottom: 0;
+}
+
+.section-title {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-left: 4px solid var(--accent-color);
+    margin-bottom: 10px;
+}
+
+.section-content {
+    font-size: 12px;
+    padding-left: 5px;
+}
+
+.competencies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.competency-tag {
+    background-color: #e0e7ff;
+    color: var(--primary-color);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid #c7d2fe;
+}
+
+.experience-item,
+.education-item {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-gray);
+}
+
+.experience-item:last-child,
+.education-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.job-title,
+.degree {
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 2px;
+}
+
+.company,
+.institution {
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 11px;
+    margin-bottom: 2px;
+}
+
+.date-range,
+.field {
+    color: #999;
+    font-size: 11px;
+    margin-bottom: 4px;
+}
+
+.achievement,
+.highlight-item,
+.summary-point {
+    font-size: 11px;
+    margin-left: 15px;
+    margin-bottom: 3px;
+    color: #555;
+    line-height: 1.4;
+}
+
+.achievement::before,
+.highlight-item::before,
+.summary-point::before {
+    content: "▪ ";
+    color: var(--accent-color);
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.certification-item {
+    margin-bottom: 8px;
+    font-size: 11px;
+}
+
+.cert-name {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.cert-issuer {
+    color: var(--text-muted);
+}
+
+.highlights-list {
+    font-size: 11px;
+}
+
+@media (max-width: 900px) {
+    .resume-container {
+        max-width: 100%;
+        height: auto;
+        margin: 10px;
+    }
+
+    .header {
+        padding: 30px 20px;
+    }
+
+    .header h1 {
+        font-size: 28px;
+    }
+
+    .content {
+        padding: 20px;
+    }
+}
+
+@media print {
+    body {
+        background-color: white;
+        margin: 0;
+        padding: 0;
+    }
+
+    .resume-container {
+        margin: 0;
+        box-shadow: none;
+        max-width: 100%;
+        height: auto;
+        page-break-after: avoid;
+    }
+
+    .section {
+        page-break-inside: avoid;
+    }
+
+    .content {
+        overflow: visible;
+        padding: 0.5in;
+    }
+}
