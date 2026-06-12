@@ -1,0 +1,29 @@
+// Add this to Program.cs if you need health check configuration
+var mongoHealthCheckConnection = builder.Configuration.GetConnectionString("MongoDB")
+    ?? builder.Configuration.GetSection("MongoDB:ConnectionString").Value
+    ?? "mongodb://localhost:27017";
+
+// For production deployments, consider:
+// 1. MongoDB Atlas connection string
+// 2. Separate read replicas for health checks
+// 3. Connection string encryption in configuration
+
+// Example production MongoDB Atlas connection:
+// "mongodb+srv://username:password@cluster.mongodb.net/ResumeDb?retryWrites=true&w=majority"
+
+// Health check endpoint will be available at:
+// GET /health
+//
+// Response format:
+// {
+//   "status": "Healthy|Degraded|Unhealthy",
+//   "checks": [
+//     {
+//       "name": "mongodb",
+//       "status": "Healthy|Degraded|Unhealthy",
+//       "description": "MongoDB connection status",
+//       "duration": "00:00:00.1234567"
+//     }
+//   ],
+//   "totalDuration": "00:00:00.1234567"
+// }

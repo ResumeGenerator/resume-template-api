@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: resume-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: ResumeDb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/ResumeDb --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - resume-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: resume-template-api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      MongoDB__ConnectionString: "mongodb://mongodb:27017"
+      MongoDB__DatabaseName: "ResumeDb"
+      MongoDB__CollectionName: "ResumeProfiles"
+    ports:
+      - "8080:8080"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./templates:/app/templates
+    networks:
+      - resume-network
+
+volumes:
+  mongodb_data:
+  mongodb_config:
+
+networks:
+  resume-network:
+    driver: bridge

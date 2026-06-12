@@ -1,0 +1,40 @@
+## Docker
+.git/
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml
+
+## IDE
+.vscode/
+.vs/
+.idea/
+*.swp
+
+## Build
+bin/
+obj/
+dist/
+publish/
+
+## Testing
+coverage/
+test-results/
+
+## Documentation
+README.md
+*.md
+
+## Git
+.git/
+.gitignore
+
+## OS
+.DS_Store
+Thumbs.db
+
+## NPM (if any frontend assets)
+node_modules/
+package-lock.json
+yarn.lock
