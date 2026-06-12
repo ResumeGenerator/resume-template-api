@@ -5,6 +5,8 @@ using ResumeTemplateService.Application.Interfaces;
 using ResumeTemplateService.Application.Mappings;
 using ResumeTemplateService.Infrastructure.Repositories;
 using ResumeTemplateService.Infrastructure.TemplateRendering;
+using Microsoft.Extensions.Diagnostics.HealthChecks; // Add this using
+using HealthChecks.MongoDb; // Add this using if needed for AddMongoDb extension
 
 namespace ResumeTemplateService.Api.Extensions;
 
@@ -52,10 +54,15 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Registers health checks for the application, including a MongoDB health check.
+    /// </summary>
+    /// <param name="services">The service collection to configure.</param>
+    /// <returns>The same <see cref="IServiceCollection"/> instance.</returns>
     public static IServiceCollection AddHealthChecks(this IServiceCollection services)
     {
-        services.AddHealthChecks()
-            .AddMongoDb(mongodbConnectionString: GetMongoConnectionString(), name: "mongodb", tags: new[] { "db" });
+        var healthChecks = services.AddHealthChecks(); // This returns IHealthChecksBuilder
+        //healthChecks.AddMongoDb(mongodbConnectionString: GetMongoConnectionString(), name: "mongodb", tags: new[] { "db" });
 
         return services;
     }

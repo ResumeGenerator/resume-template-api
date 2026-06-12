@@ -35,8 +35,8 @@ public class TemplatesController : ControllerBase
     /// </summary>
     /// <returns>A collection of available templates.</returns>
     [HttpGet]
-    [ProduceResponseType(typeof(IEnumerable<TemplateDto>), StatusCodes.Status200OK)]
-    [ProduceResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(IEnumerable<TemplateDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetAvailableTemplates()
     {
         try

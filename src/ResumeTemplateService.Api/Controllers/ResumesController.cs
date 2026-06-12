@@ -43,10 +43,10 @@ public class ResumesController : ControllerBase
     /// <param name="request">The render request containing resume ID and template ID.</param>
     /// <returns>HTML preview of the resume.</returns>
     [HttpPost("preview")]
-    [ProduceResponseType(typeof(RenderResumePreviewResponse), StatusCodes.Status200OK)]
-    [ProduceResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProduceResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    [ProduceResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(RenderResumePreviewResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> RenderResumePreview([FromBody] RenderResumePreviewRequest request)
     {
         try

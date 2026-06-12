@@ -6,7 +6,7 @@ using ResumeTemplateService.Api.Extensions;
 using ResumeTemplateService.Api.Middleware;
 using System.Reflection;
 
-var builder = WebApplicationBuilder.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 // Configuration
 var mongoConnectionString = builder.Configuration.GetConnectionString("MongoDB")
@@ -36,8 +36,8 @@ builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(mongoConnectionString, databaseName, templateBasePath);
 
 // Health Checks
-builder.Services.AddHealthChecks()
-    .AddMongoDb(mongoConnectionString, name: "mongodb", tags: new[] { "db" });
+//builder.Services.AddHealthChecks()
+//    .AddMongoDb(mongoConnectionString, name: "mongodb", tags: new[] { "db" });
 
 // Swagger
 builder.Services.AddSwaggerGen(options =>
