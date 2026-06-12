@@ -14,7 +14,7 @@ public class ResumeRepository : IResumeRepository
     public ResumeRepository(IMongoDatabase database, ILogger<ResumeRepository> logger)
     {
         _logger = logger;
-        _collection = database.GetCollection<ResumeProfile>("ResumeProfiles");
+        _collection = database.GetCollection<ResumeProfile>("parsed_resumes");
     }
 
     public async Task<ResumeProfile?> GetByIdAsync(string id)

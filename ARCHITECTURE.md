@@ -60,7 +60,7 @@
 │  MongoDB Database    │        │  Resume Templates        │
 │                      │        │  (Razor + CSS)           │
 │ ResumeDb             │        │                          │
-│ ├── ResumeProfiles   │        │ ├── professional-dark-   │
+│ ├── parsed_resumes   │        │ ├── professional-dark-   │
 │ │   (Collection)     │        │ │    blue/               │
 │ └── ...              │        │ │    - template.cshtml   │
 │                      │        │ │    - style.css         │
@@ -124,7 +124,7 @@
 ## Database Schema (MongoDB)
 
 ```
-ResumeProfiles Collection
+parsed_resumes Collection
 {
   _id: ObjectId (Primary Key)
   
@@ -353,7 +353,7 @@ Application-wide Logging
 
 1. **Async I/O**: All database and file operations are async
 2. **Template Pre-compilation**: Cached on first use
-3. **Database Indexing**: _id index on ResumeProfiles
+3. **Database Indexing**: _id index on parsed_resumes
 4. **Connection Pooling**: Managed by MongoDB driver
 5. **Minimal Dependencies**: Lightweight NuGet packages
 6. **Structured Logging**: Negligible performance impact

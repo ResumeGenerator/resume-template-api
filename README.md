@@ -214,7 +214,7 @@ GET /health
   "MongoDB": {
     "ConnectionString": "mongodb://localhost:27017",
     "DatabaseName": "ResumeDb",
-    "CollectionName": "ResumeProfiles"
+    "CollectionName": "parsed_resumes"
   }
 }
 ```

@@ -32,7 +32,7 @@ services:
       ASPNETCORE_URLS: http://+:8080
       MongoDB__ConnectionString: "mongodb://mongodb:27017"
       MongoDB__DatabaseName: "ResumeDb"
-      MongoDB__CollectionName: "ResumeProfiles"
+      MongoDB__CollectionName: "parsed_resumes"
     ports:
       - "8080:8080"
     depends_on:
