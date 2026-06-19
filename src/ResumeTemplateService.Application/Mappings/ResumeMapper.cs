@@ -14,15 +14,18 @@ public class ResumeMapper : IResumeMapper
         {
             PersonalInfo = MapPersonalInfo(profile.CandidateProfile),
             Headline = profile.ResumeBlocks?.Headline ?? profile.CareerClassification?.CurrentTitle ?? string.Empty,
+            CareerSnapshot = MapCareerSnapshot(profile),
             SummaryPoints = ExtractSummaryPoints(profile),
             CoreCompetencies = profile.CoreSkills?.PrimarySkills ?? new List<string>(),
+            SkillGroups = MapSkillGroups(profile.CoreSkills),
             TechnicalSkills = MapTechnicalSkills(profile.CoreSkills),
             Experience = profile.WorkExperience?.Select(MapExperience).ToList() ?? new List<ExperienceViewModel>(),
             Education = profile.Education?.Select(MapEducation).ToList() ?? new List<EducationViewModel>(),
             Certifications = profile.Certifications?.Select(MapCertification).ToList() ?? new List<CertificationViewModel>(),
             LeadershipHighlights = profile.LeadershipHighlights ?? new List<string>(),
             TechnicalHighlights = profile.TechnicalHighlights ?? new List<string>(),
-            IndustryHighlights = profile.IndustryHighlights ?? new List<string>()
+            IndustryHighlights = profile.IndustryHighlights ?? new List<string>(),
+            ProjectHighlights = profile.ResumeBlocks?.KeyAchievements ?? new List<string>()
         };
 
         return viewModel;
@@ -51,6 +54,38 @@ public class ResumeMapper : IResumeMapper
         if (!string.IsNullOrEmpty(candidate.Country)) parts.Add(candidate.Country);
 
         return parts.Any() ? string.Join(", ", parts) : candidate.Location;
+    }
+
+    private CareerSnapshotViewModel MapCareerSnapshot(ResumeProfile profile)
+    {
+        var focusAreas = new List<string>();
+        if (profile.CareerProgression?.CareerTrajectory?.Any() == true)
+        {
+            focusAreas.AddRange(profile.CareerProgression.CareerTrajectory);
+        }
+
+        if (profile.CareerProgression?.GrowthAreas?.Any() == true)
+        {
+            focusAreas.AddRange(profile.CareerProgression.GrowthAreas);
+        }
+
+        if (!string.IsNullOrWhiteSpace(profile.CareerProgression?.ProgressionSummary))
+        {
+            focusAreas.AddRange(profile.CareerProgression.ProgressionSummary
+                .Split('|')
+                .Select(area => area.Trim())
+                .Where(area => !string.IsNullOrWhiteSpace(area)));
+        }
+
+        return new CareerSnapshotViewModel
+        {
+            CurrentTitle = profile.CareerClassification?.CurrentTitle ?? string.Empty,
+            YearsOfExperience = profile.CareerClassification?.YearsOfExperience ?? 0,
+            CareerLevel = profile.CareerClassification?.CareerLevel ?? string.Empty,
+            Industry = profile.CareerClassification?.Industry ?? string.Empty,
+            Specialization = profile.CareerClassification?.Specialization ?? string.Empty,
+            FocusAreas = focusAreas.Distinct().Take(8).ToList()
+        };
     }
 
     private List<string> ExtractSummaryPoints(ResumeProfile profile)
@@ -91,6 +126,24 @@ public class ResumeMapper : IResumeMapper
                 Level = skill.Level,
                 Years = skill.Years
             })
+            .ToList();
+    }
+
+    private List<SkillGroupViewModel> MapSkillGroups(CoreSkills coreSkills)
+    {
+        if (coreSkills == null)
+        {
+            return new List<SkillGroupViewModel>();
+        }
+
+        return new List<SkillGroupViewModel>
+            {
+                new() { Name = "Core Engineering", Skills = coreSkills.PrimarySkills ?? new List<string>() },
+                new() { Name = "Tools & Platforms", Skills = coreSkills.SecondarySkills ?? new List<string>() },
+                new() { Name = "Leadership & Delivery", Skills = coreSkills.SoftSkills ?? new List<string>() },
+                new() { Name = "Languages", Skills = coreSkills.Languages ?? new List<string>() }
+            }
+            .Where(group => group.Skills.Any())
             .ToList();
     }
 

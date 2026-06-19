@@ -19,6 +19,8 @@ var collectionName = builder.Configuration.GetSection("MongoDB:CollectionName").
     ?? throw new InvalidOperationException("MongoDB collection name not configured.");
 var configuredTemplateBasePath = builder.Configuration.GetSection("Templates:BasePath").Value;
 var templateBasePath = ResolveTemplateBasePath(configuredTemplateBasePath, builder.Environment.ContentRootPath);
+var allowedCorsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? Array.Empty<string>();
 
 // Services
 builder.Services.AddControllers();
@@ -72,7 +74,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAngularApp", policyBuilder =>
     {
         policyBuilder
-            .AllowAnyOrigin()
+            .WithOrigins(allowedCorsOrigins)
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
@@ -83,11 +85,11 @@ var app = builder.Build();
 // Middleware
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
-// CORS
-app.UseCors("AllowAngularApp");
-
 // Routing
 app.UseRouting();
+
+// CORS
+app.UseCors("AllowAngularApp");
 
 // Health Checks
 app.UseHealthChecksEndpoint();

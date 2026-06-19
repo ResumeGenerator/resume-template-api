@@ -7,8 +7,10 @@ public class ResumeViewModel
 {
     public PersonalInfoViewModel PersonalInfo { get; set; } = null!;
     public string Headline { get; set; } = string.Empty;
+    public CareerSnapshotViewModel CareerSnapshot { get; set; } = new();
     public List<string> SummaryPoints { get; set; } = new();
     public List<string> CoreCompetencies { get; set; } = new();
+    public List<SkillGroupViewModel> SkillGroups { get; set; } = new();
     public List<TechnicalSkillViewModel> TechnicalSkills { get; set; } = new();
     public List<ExperienceViewModel> Experience { get; set; } = new();
     public List<EducationViewModel> Education { get; set; } = new();
@@ -16,6 +18,17 @@ public class ResumeViewModel
     public List<string> LeadershipHighlights { get; set; } = new();
     public List<string> TechnicalHighlights { get; set; } = new();
     public List<string> IndustryHighlights { get; set; } = new();
+    public List<string> ProjectHighlights { get; set; } = new();
+}
+
+public class CareerSnapshotViewModel
+{
+    public string CurrentTitle { get; set; } = string.Empty;
+    public int YearsOfExperience { get; set; }
+    public string CareerLevel { get; set; } = string.Empty;
+    public string Industry { get; set; } = string.Empty;
+    public string Specialization { get; set; } = string.Empty;
+    public List<string> FocusAreas { get; set; } = new();
 }
 
 public class PersonalInfoViewModel
@@ -37,6 +50,12 @@ public class TechnicalSkillViewModel
     public string Skill { get; set; } = null!;
     public string Level { get; set; } = null!;
     public int Years { get; set; }
+}
+
+public class SkillGroupViewModel
+{
+    public string Name { get; set; } = string.Empty;
+    public List<string> Skills { get; set; } = new();
 }
 
 public class ExperienceViewModel

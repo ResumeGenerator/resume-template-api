@@ -1,399 +1,122 @@
 @using ResumeTemplateService.Domain.ValueObjects
 @model ResumeViewModel
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@Model.PersonalInfo.FullName - Resume</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f4f4f4;
-        }
-
-        .resume-container {
-            max-width: 8.5in;
-            height: 11in;
-            background-color: white;
-            margin: 20px auto;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-            color: white;
-            padding: 40px 30px;
-            text-align: center;
-            border-bottom: 4px solid #fbbf24;
-        }
-
-        .header h1 {
-            font-size: 36px;
-            font-weight: bold;
-            margin-bottom: 8px;
-            letter-spacing: 1px;
-        }
-
-        .headline {
-            font-size: 16px;
-            font-weight: 300;
-            margin-bottom: 12px;
-            opacity: 0.95;
-        }
-
-        .contact-info {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 20px;
-            font-size: 13px;
-            margin-top: 12px;
-        }
-
-        .contact-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .contact-item a {
-            color: #fbbf24;
-            text-decoration: none;
-        }
-
-        .contact-item a:hover {
-            text-decoration: underline;
-        }
-
-        .content {
-            flex: 1;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .section {
-            margin-bottom: 16px;
-        }
-
-        .section:last-child {
-            margin-bottom: 0;
-        }
-
-        .section-title {
-            background-color: #1e3a8a;
-            color: white;
-            padding: 8px 12px;
-            font-size: 14px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-left: 4px solid #fbbf24;
-            margin-bottom: 10px;
-        }
-
-        .section-content {
-            font-size: 12px;
-        }
-
-        .competencies {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        .competency-tag {
-            background-color: #e0e7ff;
-            color: #1e3a8a;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 500;
-        }
-
-        .experience-item {
-            margin-bottom: 12px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .experience-item:last-child {
-            border-bottom: none;
-        }
-
-        .job-title {
-            font-weight: bold;
-            color: #1e3a8a;
-            margin-bottom: 2px;
-        }
-
-        .company {
-            font-style: italic;
-            color: #666;
-            font-size: 11px;
-            margin-bottom: 2px;
-        }
-
-        .date-range {
-            color: #999;
-            font-size: 11px;
-            margin-bottom: 4px;
-        }
-
-        .achievement {
-            font-size: 11px;
-            margin-left: 15px;
-            margin-bottom: 3px;
-            color: #555;
-        }
-
-        .achievement:before {
-            content: "▪ ";
-            color: #fbbf24;
-            font-weight: bold;
-        }
-
-        .education-item {
-            margin-bottom: 10px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .education-item:last-child {
-            border-bottom: none;
-        }
-
-        .degree {
-            font-weight: bold;
-            color: #1e3a8a;
-            margin-bottom: 2px;
-        }
-
-        .institution {
-            color: #666;
-            font-size: 11px;
-            margin-bottom: 2px;
-        }
-
-        .field {
-            color: #666;
-            font-size: 11px;
-            margin-bottom: 2px;
-        }
-
-        .certification-item {
-            margin-bottom: 8px;
-            font-size: 11px;
-        }
-
-        .cert-name {
-            font-weight: bold;
-            color: #1e3a8a;
-        }
-
-        .cert-issuer {
-            color: #666;
-        }
-
-        .highlights-list {
-            font-size: 11px;
-            margin-left: 15px;
-        }
-
-        .highlight-item {
-            margin-bottom: 3px;
-            color: #555;
-        }
-
-        .highlight-item:before {
-            content: "▪ ";
-            color: #fbbf24;
-            font-weight: bold;
-        }
-
-        @media print {
-            body {
-                background-color: white;
-            }
-
-            .resume-container {
-                margin: 0;
-                box-shadow: none;
-                height: auto;
-            }
-
-            .section {
-                page-break-inside: avoid;
-            }
-        }
-
-        .summary-section .summary-point {
-            font-size: 11px;
-            margin-bottom: 4px;
-            color: #555;
-            line-height: 1.4;
-        }
-
-        .summary-section .summary-point:before {
-            content: "▪ ";
-            color: #fbbf24;
-            font-weight: bold;
-            margin-right: 5px;
-        }
-    </style>
-</head>
-<body>
-    <div class="resume-container">
-        <!-- Header Section -->
-        <div class="header">
-            <h1>@Model.PersonalInfo.FullName</h1>
-            @if (!string.IsNullOrEmpty(Model.Headline))
+@{
+    var snapshotItems = new List<string>();
+    if (Model.CareerSnapshot.YearsOfExperience > 0) snapshotItems.Add($"{Model.CareerSnapshot.YearsOfExperience}+ years");
+    if (!string.IsNullOrWhiteSpace(Model.CareerSnapshot.CareerLevel)) snapshotItems.Add(Model.CareerSnapshot.CareerLevel);
+    if (!string.IsNullOrWhiteSpace(Model.CareerSnapshot.Industry)) snapshotItems.Add(Model.CareerSnapshot.Industry);
+    if (!string.IsNullOrWhiteSpace(Model.CareerSnapshot.Specialization)) snapshotItems.Add(Model.CareerSnapshot.Specialization);
+    var highlights = Model.TechnicalHighlights.Concat(Model.LeadershipHighlights).Concat(Model.ProjectHighlights).Concat(Model.IndustryHighlights).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().Take(8).ToList();
+}
+<div style="font-family: 'Segoe UI', Arial, sans-serif; color: #172033; background: #edf3f8; padding: 18px; line-height: 1.42;">
+    <div style="max-width: 816px; margin: 0 auto; background: #ffffff; box-shadow: 0 18px 44px rgba(15, 23, 42, 0.18); border: 1px solid #cbd7e4; overflow: hidden;">
+        <div style="background: #17376d; color: #ffffff; padding: 32px 40px 24px; border-bottom: 5px solid #d7a82f;">
+            <div style="font-size: 33px; line-height: 1.08; font-weight: 850;">@Model.PersonalInfo.FullName</div>
+            @if (!string.IsNullOrWhiteSpace(Model.Headline))
             {
-                <div class="headline">@Model.Headline</div>
+                <div style="margin-top: 8px; max-width: 700px; color: #dce7f5; font-size: 14px; font-weight: 550;">@Model.Headline</div>
             }
-            <div class="contact-info">
-                @if (!string.IsNullOrEmpty(Model.PersonalInfo.Email))
-                {
-                    <div class="contact-item">
-                        ✉️ <a href="mailto:@Model.PersonalInfo.Email">@Model.PersonalInfo.Email</a>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 15px; font-size: 12px; color: #f8fafc;">
+                @if (!string.IsNullOrWhiteSpace(Model.PersonalInfo.Email)) { <a style="color: #ffd66b; text-decoration: none; font-weight: 750;" href="mailto:@Model.PersonalInfo.Email">@Model.PersonalInfo.Email</a> }
+                @if (!string.IsNullOrWhiteSpace(Model.PersonalInfo.Phone)) { <span>@Model.PersonalInfo.Phone</span> }
+                @if (!string.IsNullOrWhiteSpace(Model.PersonalInfo.Location)) { <span>@Model.PersonalInfo.Location</span> }
+                @if (!string.IsNullOrWhiteSpace(Model.PersonalInfo.LinkedInUrl)) { <a style="color: #ffd66b; text-decoration: none; font-weight: 750;" href="@Model.PersonalInfo.LinkedInUrl" target="_blank">LinkedIn</a> }
+            </div>
+            @if (snapshotItems.Any() || Model.CareerSnapshot.FocusAreas.Any())
+            {
+                <div style="margin-top: 14px; padding: 10px 12px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.22); font-size: 11px; color: #f8fafc;">
+                    @if (snapshotItems.Any()) { <div style="font-weight: 850; color: #ffffff;">@string.Join(" | ", snapshotItems)</div> }
+                    @if (Model.CareerSnapshot.FocusAreas.Any()) { <div style="margin-top: 4px; color: #dce7f5;">Focus: @string.Join(", ", Model.CareerSnapshot.FocusAreas.Take(8))</div> }
+                </div>
+            }
+        </div>
+
+        <div style="padding: 27px 40px 36px;">
+            @if (Model.SummaryPoints.Any())
+            {
+                <section style="margin-bottom: 20px;">
+                    <div style="background: #17376d; color: #ffffff; border-left: 5px solid #d7a82f; padding: 8px 12px; font-size: 12px; font-weight: 850; text-transform: uppercase; margin-bottom: 10px;">Professional Summary</div>
+                    @foreach (var point in Model.SummaryPoints.Take(5))
+                    {
+                        <div style="display: flex; gap: 8px; margin-bottom: 5px; font-size: 12px; color: #263244;"><span style="color: #b8891d; font-weight: 900;">&bull;</span><span>@point</span></div>
+                    }
+                </section>
+            }
+
+            @if (Model.SkillGroups.Any())
+            {
+                <section style="margin-bottom: 20px;">
+                    <div style="background: #17376d; color: #ffffff; border-left: 5px solid #d7a82f; padding: 8px 12px; font-size: 12px; font-weight: 850; text-transform: uppercase; margin-bottom: 10px;">Skills & Platforms</div>
+                    @foreach (var group in Model.SkillGroups.Take(4))
+                    {
+                        <div style="margin-bottom: 8px;">
+                            <span style="display: inline-block; min-width: 128px; font-size: 11px; font-weight: 850; color: #17376d;">@group.Name</span>
+                            <span style="font-size: 11px; color: #334155;">@string.Join(", ", group.Skills.Take(14))</span>
+                        </div>
+                    }
+                </section>
+            }
+
+            @if (highlights.Any())
+            {
+                <section style="margin-bottom: 20px;">
+                    <div style="background: #17376d; color: #ffffff; border-left: 5px solid #d7a82f; padding: 8px 12px; font-size: 12px; font-weight: 850; text-transform: uppercase; margin-bottom: 10px;">Selected Highlights</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px 18px;">
+                        @foreach (var highlight in highlights)
+                        {
+                            <div style="display: flex; gap: 7px; font-size: 11px; color: #334155;"><span style="color: #b8891d; font-weight: 900;">&bull;</span><span>@highlight</span></div>
+                        }
                     </div>
+                </section>
+            }
+
+            @if (Model.Experience.Any())
+            {
+                <section style="margin-bottom: 20px;">
+                    <div style="background: #17376d; color: #ffffff; border-left: 5px solid #d7a82f; padding: 8px 12px; font-size: 12px; font-weight: 850; text-transform: uppercase; margin-bottom: 10px;">Professional Experience</div>
+                    @foreach (var exp in Model.Experience.Take(6))
+                    {
+                        <div style="margin-bottom: 13px; padding-bottom: 11px; border-bottom: 1px solid #e3eaf2;">
+                            <div style="display: flex; justify-content: space-between; gap: 14px; align-items: baseline;">
+                                <div style="font-size: 13px; font-weight: 850; color: #17376d;">@exp.JobTitle</div>
+                                <div style="font-size: 11px; color: #667085; white-space: nowrap;">@exp.DateRange</div>
+                            </div>
+                            <div style="font-size: 12px; color: #263244; font-weight: 750;">@exp.Company@if (!string.IsNullOrWhiteSpace(exp.Location)) { <span style="color: #667085; font-weight: 500;"> - @exp.Location</span> }</div>
+                            @foreach (var achievement in exp.Achievements.Take(3))
+                            {
+                                <div style="display: flex; gap: 8px; margin-top: 4px; font-size: 11px; color: #334155;"><span style="color: #b8891d; font-weight: 900;">&bull;</span><span>@achievement</span></div>
+                            }
+                            @if (exp.Technologies.Any())
+                            {
+                                <div style="margin-top: 5px; font-size: 10px; color: #667085;"><span style="font-weight: 850; color: #17376d;">Tech:</span> @string.Join(", ", exp.Technologies.Take(12))</div>
+                            }
+                        </div>
+                    }
+                </section>
+            }
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                @if (Model.Education.Any())
+                {
+                    <section>
+                        <div style="background: #17376d; color: #ffffff; border-left: 5px solid #d7a82f; padding: 8px 12px; font-size: 12px; font-weight: 850; text-transform: uppercase; margin-bottom: 10px;">Education</div>
+                        @foreach (var edu in Model.Education.Take(2))
+                        {
+                            <div style="margin-bottom: 10px;"><div style="font-size: 12px; font-weight: 850; color: #17376d;">@edu.Degree</div><div style="font-size: 11px; color: #263244;">@edu.Institution</div><div style="font-size: 11px; color: #667085;">@edu.FieldOfStudy @edu.DateRange</div></div>
+                        }
+                    </section>
                 }
-                @if (!string.IsNullOrEmpty(Model.PersonalInfo.Phone))
+                @if (Model.Certifications.Any())
                 {
-                    <div class="contact-item">
-                        ☎️ @Model.PersonalInfo.Phone
-                    </div>
-                }
-                @if (!string.IsNullOrEmpty(Model.PersonalInfo.Location))
-                {
-                    <div class="contact-item">
-                        📍 @Model.PersonalInfo.Location
-                    </div>
-                }
-                @if (!string.IsNullOrEmpty(Model.PersonalInfo.LinkedInUrl))
-                {
-                    <div class="contact-item">
-                        in <a href="@Model.PersonalInfo.LinkedInUrl" target="_blank">LinkedIn</a>
-                    </div>
-                }
-                @if (!string.IsNullOrEmpty(Model.PersonalInfo.GitHubUrl))
-                {
-                    <div class="contact-item">
-                        <a href="@Model.PersonalInfo.GitHubUrl" target="_blank">GitHub</a>
-                    </div>
+                    <section>
+                        <div style="background: #17376d; color: #ffffff; border-left: 5px solid #d7a82f; padding: 8px 12px; font-size: 12px; font-weight: 850; text-transform: uppercase; margin-bottom: 10px;">Certifications</div>
+                        @foreach (var cert in Model.Certifications.Take(5))
+                        {
+                            <div style="font-size: 11px; color: #334155; margin-bottom: 6px;"><span style="font-weight: 850; color: #17376d;">@cert.Name</span>@if (!string.IsNullOrWhiteSpace(cert.Issuer)) { <span style="color: #667085;"> - @cert.Issuer</span> }</div>
+                        }
+                    </section>
                 }
             </div>
         </div>
-
-        <!-- Content Section -->
-        <div class="content">
-            <!-- Professional Summary -->
-            @if (Model.SummaryPoints.Any())
-            {
-                <div class="section summary-section">
-                    <div class="section-title">Professional Summary</div>
-                    <div class="section-content">
-                        @foreach (var point in Model.SummaryPoints.Take(3))
-                        {
-                            <div class="summary-point">@point</div>
-                        }
-                    </div>
-                </div>
-            }
-
-            <!-- Core Competencies -->
-            @if (Model.CoreCompetencies.Any())
-            {
-                <div class="section">
-                    <div class="section-title">Core Competencies</div>
-                    <div class="section-content">
-                        <div class="competencies">
-                            @foreach (var skill in Model.CoreCompetencies.Take(8))
-                            {
-                                <div class="competency-tag">@skill</div>
-                            }
-                        </div>
-                    </div>
-                </div>
-            }
-
-            <!-- Work Experience -->
-            @if (Model.Experience.Any())
-            {
-                <div class="section">
-                    <div class="section-title">Professional Experience</div>
-                    <div class="section-content">
-                        @foreach (var exp in Model.Experience.Take(3))
-                        {
-                            <div class="experience-item">
-                                <div class="job-title">@exp.JobTitle</div>
-                                <div class="company">@exp.Company</div>
-                                <div class="date-range">@exp.DateRange</div>
-                                @if (!string.IsNullOrEmpty(exp.Location))
-                                {
-                                    <div class="date-range">@exp.Location</div>
-                                }
-                                @if (exp.Achievements.Any())
-                                {
-                                    @foreach (var achievement in exp.Achievements.Take(2))
-                                    {
-                                        <div class="achievement">@achievement</div>
-                                    }
-                                }
-                            </div>
-                        }
-                    </div>
-                </div>
-            }
-
-            <!-- Education -->
-            @if (Model.Education.Any())
-            {
-                <div class="section">
-                    <div class="section-title">Education</div>
-                    <div class="section-content">
-                        @foreach (var edu in Model.Education.Take(2))
-                        {
-                            <div class="education-item">
-                                <div class="degree">@edu.Degree</div>
-                                <div class="institution">@edu.Institution</div>
-                                <div class="field">@edu.FieldOfStudy • @edu.DateRange</div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            }
-
-            <!-- Certifications -->
-            @if (Model.Certifications.Any())
-            {
-                <div class="section">
-                    <div class="section-title">Certifications</div>
-                    <div class="section-content">
-                        @foreach (var cert in Model.Certifications.Take(3))
-                        {
-                            <div class="certification-item">
-                                <span class="cert-name">@cert.Name</span>
-                                <span class="cert-issuer">• @cert.Issuer</span>
-                            </div>
-                        }
-                    </div>
-                </div>
-            }
-        </div>
     </div>
-</body>
-</html>
+</div>

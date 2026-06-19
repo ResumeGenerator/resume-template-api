@@ -40,7 +40,7 @@ public static class ServiceCollectionExtensions
             .UseFileSystemProject(templateBasePath)
             .Build();
 
-        services.AddSingleton(engine);
+        services.AddSingleton<IRazorLightEngine>(engine);
 
         // Template Rendering and Provider
         services.AddScoped<ITemplateRenderer>(sp =>
