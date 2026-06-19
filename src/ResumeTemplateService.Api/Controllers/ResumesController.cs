@@ -38,10 +38,10 @@ public class ResumesController : ControllerBase
     }
 
     /// <summary>
-    /// Renders a resume with the specified template and returns HTML preview.
+    /// Renders a resume with one or more specified templates and returns HTML previews.
     /// </summary>
-    /// <param name="request">The render request containing resume ID and template ID.</param>
-    /// <returns>HTML preview of the resume.</returns>
+    /// <param name="request">The render request containing resume ID and template IDs.</param>
+    /// <returns>HTML previews of the resume.</returns>
     [HttpPost("preview")]
     [ProducesResponseType(typeof(RenderResumePreviewResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
@@ -51,8 +51,10 @@ public class ResumesController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Rendering resume preview - ResumeId: {ResumeId}, TemplateId: {TemplateId}", 
-                request.ResumeId, request.TemplateId);
+            var templateIds = GetRequestedTemplateIds(request);
+
+            _logger.LogInformation("Rendering resume preview - ResumeId: {ResumeId}, TemplateIds: {TemplateIds}",
+                request.ResumeId, string.Join(", ", templateIds));
 
             if (string.IsNullOrWhiteSpace(request.ResumeId))
             {
@@ -65,13 +67,13 @@ public class ResumesController : ControllerBase
                 return BadRequest(error);
             }
 
-            if (string.IsNullOrWhiteSpace(request.TemplateId))
+            if (templateIds.Count == 0)
             {
                 var error = new ErrorResponse
                 {
                     StatusCode = StatusCodes.Status400BadRequest,
-                    Message = "TemplateId is required.",
-                    Details = "The 'templateId' field cannot be empty."
+                    Message = "At least one template id is required.",
+                    Details = "Provide either 'templateId' or 'templateIds'."
                 };
                 return BadRequest(error);
             }
@@ -80,7 +82,7 @@ public class ResumesController : ControllerBase
             var command = new RenderResumeTemplateCommand
             {
                 ResumeId = request.ResumeId,
-                TemplateId = request.TemplateId
+                TemplateIds = templateIds
             };
 
             var handler = new RenderResumeTemplateCommandHandler(
@@ -88,16 +90,20 @@ public class ResumesController : ControllerBase
                 _templateRenderer,
                 _resumeMapper);
 
-            var result = await handler.HandleAsync(command);
+            var results = await handler.HandleAsync(command);
 
             var response = new RenderResumePreviewResponse
             {
-                TemplateId = result.TemplateId,
-                Html = result.Html
+                ResumeId = request.ResumeId,
+                Templates = results.Select(result => new RenderedTemplateDto
+                {
+                    TemplateId = result.TemplateId,
+                    Html = result.Html
+                }).ToList()
             };
 
-            _logger.LogInformation("Resume preview rendered successfully - ResumeId: {ResumeId}, TemplateId: {TemplateId}", 
-                request.ResumeId, request.TemplateId);
+            _logger.LogInformation("Resume preview rendered successfully - ResumeId: {ResumeId}, TemplateCount: {TemplateCount}",
+                request.ResumeId, response.Templates.Count);
 
             return Ok(response);
         }
@@ -122,5 +128,26 @@ public class ResumesController : ControllerBase
             };
             return StatusCode(StatusCodes.Status500InternalServerError, error);
         }
+    }
+
+    private static IReadOnlyCollection<string> GetRequestedTemplateIds(RenderResumePreviewRequest request)
+    {
+        var templateIds = new List<string>();
+
+        if (request.TemplateIds != null)
+        {
+            templateIds.AddRange(request.TemplateIds);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.TemplateId))
+        {
+            templateIds.Add(request.TemplateId);
+        }
+
+        return templateIds
+            .Where(templateId => !string.IsNullOrWhiteSpace(templateId))
+            .Select(templateId => templateId.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 }

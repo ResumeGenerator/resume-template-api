@@ -13,7 +13,8 @@ var mongoConnectionString = builder.Configuration.GetConnectionString("MongoDB")
     ?? throw new InvalidOperationException("MongoDB connection string not configured.");
 var databaseName = builder.Configuration.GetSection("MongoDB:DatabaseName").Value
     ?? throw new InvalidOperationException("MongoDB database name not configured.");
-var templateBasePath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "templates");
+var configuredTemplateBasePath = builder.Configuration.GetSection("Templates:BasePath").Value;
+var templateBasePath = ResolveTemplateBasePath(configuredTemplateBasePath, builder.Environment.ContentRootPath);
 
 // Services
 builder.Services.AddControllers();
@@ -101,3 +102,21 @@ app.MapControllers();
 app.MapHealthChecks("/health");
 
 await app.RunAsync();
+
+static string ResolveTemplateBasePath(string? configuredPath, string contentRootPath)
+{
+    if (!string.IsNullOrWhiteSpace(configuredPath))
+    {
+        return Path.GetFullPath(Path.IsPathRooted(configuredPath)
+            ? configuredPath
+            : Path.Combine(contentRootPath, configuredPath));
+    }
+
+    var contentRootTemplatesPath = Path.Combine(contentRootPath, "templates");
+    if (Directory.Exists(contentRootTemplatesPath))
+    {
+        return contentRootTemplatesPath;
+    }
+
+    return Path.GetFullPath(Path.Combine(contentRootPath, "..", "..", "templates"));
+}

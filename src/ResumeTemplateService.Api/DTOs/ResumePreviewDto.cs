@@ -3,10 +3,17 @@ namespace ResumeTemplateService.Api.DTOs;
 public class RenderResumePreviewRequest
 {
     public string ResumeId { get; set; } = null!;
-    public string TemplateId { get; set; } = null!;
+    public string? TemplateId { get; set; }
+    public IReadOnlyCollection<string>? TemplateIds { get; set; }
 }
 
 public class RenderResumePreviewResponse
+{
+    public string ResumeId { get; set; } = null!;
+    public IReadOnlyCollection<RenderedTemplateDto> Templates { get; set; } = Array.Empty<RenderedTemplateDto>();
+}
+
+public class RenderedTemplateDto
 {
     public string TemplateId { get; set; } = null!;
     public string Html { get; set; } = null!;

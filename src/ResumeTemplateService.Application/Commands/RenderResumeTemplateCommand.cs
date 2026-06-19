@@ -8,7 +8,7 @@ namespace ResumeTemplateService.Application.Commands;
 public class RenderResumeTemplateCommand
 {
     public string ResumeId { get; set; } = null!;
-    public string TemplateId { get; set; } = null!;
+    public IReadOnlyCollection<string> TemplateIds { get; set; } = Array.Empty<string>();
 }
 
 public class RenderResumeTemplateCommandHandler
@@ -27,7 +27,7 @@ public class RenderResumeTemplateCommandHandler
         _resumeMapper = resumeMapper;
     }
 
-    public async Task<RenderResumeTemplateResponse> HandleAsync(
+    public async Task<IReadOnlyCollection<RenderResumeTemplateResponse>> HandleAsync(
         RenderResumeTemplateCommand command,
         CancellationToken cancellationToken = default)
     {
@@ -38,23 +38,40 @@ public class RenderResumeTemplateCommandHandler
             throw new InvalidOperationException($"Resume with id '{command.ResumeId}' not found.");
         }
 
-        // Check if template exists
-        if (!await _templateRenderer.TemplateExistsAsync(command.TemplateId))
+        var templateIds = command.TemplateIds
+            .Where(templateId => !string.IsNullOrWhiteSpace(templateId))
+            .Select(templateId => templateId.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (templateIds.Count == 0)
         {
-            throw new InvalidOperationException($"Template '{command.TemplateId}' not found.");
+            throw new InvalidOperationException("At least one template id is required.");
         }
 
         // Map to view model
         var resumeViewModel = _resumeMapper.Map(resumeProfile);
 
-        // Render template
-        var html = await _templateRenderer.RenderAsync(command.TemplateId, resumeViewModel);
-
-        return new RenderResumeTemplateResponse
+        var renderedTemplates = new List<RenderResumeTemplateResponse>();
+        foreach (var templateId in templateIds)
         {
-            TemplateId = command.TemplateId,
-            Html = html
-        };
+            // Check if template exists
+            if (!await _templateRenderer.TemplateExistsAsync(templateId))
+            {
+                throw new InvalidOperationException($"Template '{templateId}' not found.");
+            }
+
+            // Render template
+            var html = await _templateRenderer.RenderAsync(templateId, resumeViewModel);
+
+            renderedTemplates.Add(new RenderResumeTemplateResponse
+            {
+                TemplateId = templateId,
+                Html = html
+            });
+        }
+
+        return renderedTemplates;
     }
 }
 
