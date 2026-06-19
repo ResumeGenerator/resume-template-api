@@ -5,8 +5,6 @@ using ResumeTemplateService.Application.Interfaces;
 using ResumeTemplateService.Application.Mappings;
 using ResumeTemplateService.Infrastructure.Repositories;
 using ResumeTemplateService.Infrastructure.TemplateRendering;
-using Microsoft.Extensions.Diagnostics.HealthChecks; // Add this using
-using HealthChecks.MongoDb; // Add this using if needed for AddMongoDb extension
 
 namespace ResumeTemplateService.Api.Extensions;
 
@@ -22,6 +20,7 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         string mongoConnectionString,
         string databaseName,
+        string collectionName,
         string templateBasePath)
     {
         // MongoDB
@@ -30,7 +29,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(mongoDatabase);
 
         // Repository
-        services.AddScoped<IResumeRepository, ResumeRepository>();
+        services.AddScoped<IResumeRepository>(sp =>
+            new ResumeRepository(
+                sp.GetRequiredService<IMongoDatabase>(),
+                collectionName,
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ResumeRepository>>()));
 
         // RazorLight Engine
         var engine = new RazorLightEngineBuilder()
@@ -52,24 +55,5 @@ public static class ServiceCollectionExtensions
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TemplateProvider>>()));
 
         return services;
-    }
-
-    /// <summary>
-    /// Registers health checks for the application, including a MongoDB health check.
-    /// </summary>
-    /// <param name="services">The service collection to configure.</param>
-    /// <returns>The same <see cref="IServiceCollection"/> instance.</returns>
-    public static IServiceCollection AddHealthChecks(this IServiceCollection services)
-    {
-        var healthChecks = services.AddHealthChecks(); // This returns IHealthChecksBuilder
-        //healthChecks.AddMongoDb(mongodbConnectionString: GetMongoConnectionString(), name: "mongodb", tags: new[] { "db" });
-
-        return services;
-    }
-
-    private static string GetMongoConnectionString()
-    {
-        // This will be overridden in the Program.cs setup
-        return "mongodb://localhost:27017";
     }
 }

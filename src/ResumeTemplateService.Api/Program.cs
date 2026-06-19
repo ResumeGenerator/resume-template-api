@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
+using HealthChecks.MongoDb;
 using ResumeTemplateService.Api.Extensions;
 using ResumeTemplateService.Api.Middleware;
 using System.Reflection;
@@ -9,10 +10,13 @@ using System.Reflection;
 var builder = WebApplication.CreateBuilder(args);
 
 // Configuration
-var mongoConnectionString = builder.Configuration.GetConnectionString("MongoDB")
+var mongoConnectionString = builder.Configuration.GetSection("MongoDB:ConnectionString").Value
+    ?? builder.Configuration.GetConnectionString("MongoDB")
     ?? throw new InvalidOperationException("MongoDB connection string not configured.");
 var databaseName = builder.Configuration.GetSection("MongoDB:DatabaseName").Value
     ?? throw new InvalidOperationException("MongoDB database name not configured.");
+var collectionName = builder.Configuration.GetSection("MongoDB:CollectionName").Value
+    ?? throw new InvalidOperationException("MongoDB collection name not configured.");
 var configuredTemplateBasePath = builder.Configuration.GetSection("Templates:BasePath").Value;
 var templateBasePath = ResolveTemplateBasePath(configuredTemplateBasePath, builder.Environment.ContentRootPath);
 
@@ -34,11 +38,11 @@ builder.Services.AddLogging(configure =>
 builder.Services.AddApplicationServices();
 
 // Infrastructure Services
-builder.Services.AddInfrastructureServices(mongoConnectionString, databaseName, templateBasePath);
+builder.Services.AddInfrastructureServices(mongoConnectionString, databaseName, collectionName, templateBasePath);
 
 // Health Checks
-//builder.Services.AddHealthChecks()
-//    .AddMongoDb(mongoConnectionString, name: "mongodb", tags: new[] { "db" });
+builder.Services.AddHealthChecks()
+    .AddMongoDb(mongoConnectionString, name: "mongodb", tags: new[] { "db" });
 
 // Swagger
 builder.Services.AddSwaggerGen(options =>

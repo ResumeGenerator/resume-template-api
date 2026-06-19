@@ -11,10 +11,10 @@ public class ResumeRepository : IResumeRepository
     private readonly IMongoCollection<ResumeProfile> _collection;
     private readonly ILogger<ResumeRepository> _logger;
 
-    public ResumeRepository(IMongoDatabase database, ILogger<ResumeRepository> logger)
+    public ResumeRepository(IMongoDatabase database, string collectionName, ILogger<ResumeRepository> logger)
     {
         _logger = logger;
-        _collection = database.GetCollection<ResumeProfile>("parsed_resumes");
+        _collection = database.GetCollection<ResumeProfile>(collectionName);
     }
 
     public async Task<ResumeProfile?> GetByIdAsync(string id)
