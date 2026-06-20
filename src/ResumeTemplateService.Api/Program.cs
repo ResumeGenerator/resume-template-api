@@ -11,8 +11,7 @@ using System.Reflection;
 var builder = WebApplication.CreateBuilder(args);
 
 var railwayPort = Environment.GetEnvironmentVariable("PORT");
-if (!string.IsNullOrWhiteSpace(railwayPort) &&
-    string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
+if (!string.IsNullOrWhiteSpace(railwayPort))
 {
     builder.WebHost.UseUrls($"http://0.0.0.0:{railwayPort}");
 }
@@ -117,6 +116,10 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+app.Logger.LogInformation(
+    "Runtime URLs - PORT: {Port}, ASPNETCORE_URLS: {AspNetCoreUrls}",
+    railwayPort,
+    Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "(not set)");
 app.Logger.LogInformation("Allowed CORS origins: {AllowedCorsOrigins}", string.Join(", ", allowedCorsOrigins));
 
 // Middleware
@@ -141,6 +144,9 @@ if (app.Environment.IsDevelopment())
 app.UseAuthorization();
 
 // Endpoints
+app.MapGet("/live", () => Results.Ok(new { status = "alive" }));
+app.MapMethods("/{*path}", new[] { "OPTIONS" }, () => Results.NoContent())
+    .RequireCors("AllowAngularApp");
 app.MapControllers();
 app.MapHealthChecks("/health");
 

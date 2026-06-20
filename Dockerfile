@@ -48,7 +48,7 @@ ENV ASPNETCORE_ENVIRONMENT=Production
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD sh -c 'curl -f http://localhost:${PORT:-8080}/health || exit 1'
+    CMD sh -c 'curl -f http://localhost:${PORT:-8080}/live || exit 1'
 
 # Start application. Railway provides PORT; local Docker runs default to 8080.
 ENTRYPOINT ["sh", "-c", "exec dotnet ResumeTemplateService.Api.dll --urls http://0.0.0.0:${PORT:-8080}"]
