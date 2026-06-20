@@ -84,7 +84,7 @@ public class ResumeMapper : IResumeMapper
             CareerLevel = profile.CareerClassification?.CareerLevel ?? string.Empty,
             Industry = profile.CareerClassification?.Industry ?? string.Empty,
             Specialization = profile.CareerClassification?.Specialization ?? string.Empty,
-            FocusAreas = focusAreas.Distinct().Take(8).ToList()
+            FocusAreas = focusAreas.Distinct().ToList()
         };
     }
 
@@ -111,10 +111,14 @@ public class ResumeMapper : IResumeMapper
             points.AddRange(profile.ResumeBlocks.KeyAchievements);
         }
 
-        return points.Take(5).ToList(); // Limit to top 5 summary points
+        return points
+            .Where(point => !string.IsNullOrWhiteSpace(point))
+            .Select(point => point.Trim())
+            .Distinct()
+            .ToList();
     }
 
-    private List<TechnicalSkillViewModel> MapTechnicalSkills(CoreSkills coreSkills)
+    private List<TechnicalSkillViewModel> MapTechnicalSkills(CoreSkills? coreSkills)
     {
         if (coreSkills?.SkillsMatrix?.TechnicalProficiency == null)
             return new List<TechnicalSkillViewModel>();
@@ -129,7 +133,7 @@ public class ResumeMapper : IResumeMapper
             .ToList();
     }
 
-    private List<SkillGroupViewModel> MapSkillGroups(CoreSkills coreSkills)
+    private List<SkillGroupViewModel> MapSkillGroups(CoreSkills? coreSkills)
     {
         if (coreSkills == null)
         {

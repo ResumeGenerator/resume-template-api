@@ -21,7 +21,8 @@ public static class ServiceCollectionExtensions
         string mongoConnectionString,
         string databaseName,
         string collectionName,
-        string templateBasePath)
+        string templateBasePath,
+        string? chromiumExecutablePath)
     {
         // MongoDB
         var mongoClient = new MongoClient(mongoConnectionString);
@@ -53,6 +54,13 @@ public static class ServiceCollectionExtensions
             new TemplateProvider(
                 templateBasePath,
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TemplateProvider>>()));
+
+        services.AddScoped<IPdfRenderer>(sp =>
+            new ChromiumPdfRenderer(
+                chromiumExecutablePath,
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ChromiumPdfRenderer>>()));
+
+        services.AddScoped<IWordRenderer, DocxWordRenderer>();
 
         return services;
     }

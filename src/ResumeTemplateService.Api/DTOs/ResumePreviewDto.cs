@@ -13,6 +13,18 @@ public class RenderResumePreviewResponse
     public IReadOnlyCollection<RenderedTemplateDto> Templates { get; set; } = Array.Empty<RenderedTemplateDto>();
 }
 
+public class RenderResumePdfRequest
+{
+    public string ResumeId { get; set; } = null!;
+    public string TemplateId { get; set; } = null!;
+}
+
+public class RenderResumeWordRequest
+{
+    public string ResumeId { get; set; } = null!;
+    public string TemplateId { get; set; } = null!;
+}
+
 public class RenderedTemplateDto
 {
     public string TemplateId { get; set; } = null!;

@@ -99,6 +99,11 @@ public class ResumeRepository : IResumeRepository
         var coreSkills = GetDocument(profile, "coreSkills") ?? new BsonDocument();
         var resumeBlocks = GetDocument(profile, "resumeBlocks") ?? new BsonDocument();
         var atsAnalysis = GetDocument(profile, "atsAnalysis") ?? new BsonDocument();
+        var summaryPoints = GetStringArray(resumeBlocks, "executiveSummary")
+            .Concat(GetStringArray(profile, "professionalSummaryPoints"))
+            .Where(point => !string.IsNullOrWhiteSpace(point))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
         var nameParts = SplitFullName(GetString(candidate, "fullName"));
 
         return new ResumeProfile
@@ -148,8 +153,7 @@ public class ResumeRepository : IResumeRepository
             IndustryHighlights = GetStringArray(resumeBlocks, "industryHighlights"),
             ResumeBlocks = new ResumeBlocks
             {
-                ProfessionalSummary = string.Join(Environment.NewLine, GetStringArray(resumeBlocks, "executiveSummary")
-                    .DefaultIfEmpty(string.Join(Environment.NewLine, GetStringArray(profile, "professionalSummaryPoints")))),
+                ProfessionalSummary = string.Join(Environment.NewLine, summaryPoints),
                 Headline = GetString(candidate, "professionalHeadline", GetString(candidate, "currentTitle")),
                 KeyAchievements = GetStringArray(resumeBlocks, "projectHighlights")
             },
@@ -167,11 +171,12 @@ public class ResumeRepository : IResumeRepository
 
     private static WorkExperience MapWorkExperience(BsonDocument experience)
     {
-        var achievements = GetStringArray(experience, "achievements");
-        if (achievements.Count == 0)
-        {
-            achievements = GetStringArray(experience, "responsibilities");
-        }
+        var responsibilities = GetStringArray(experience, "responsibilities");
+        var achievements = responsibilities
+            .Concat(GetStringArray(experience, "achievements"))
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
         return new WorkExperience
         {
@@ -182,7 +187,7 @@ public class ResumeRepository : IResumeRepository
             StartDate = GetString(experience, "startDate"),
             EndDate = GetString(experience, "endDate"),
             IsCurrent = GetBool(experience, "isCurrent"),
-            Description = string.Join(" ", GetStringArray(experience, "responsibilities").Take(2)),
+            Description = string.Join(" ", responsibilities),
             Achievements = achievements,
             Technologies = GetStringArray(experience, "toolsAndTaxonomiesUsed")
         };

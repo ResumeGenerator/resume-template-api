@@ -19,6 +19,7 @@ var collectionName = builder.Configuration.GetSection("MongoDB:CollectionName").
     ?? throw new InvalidOperationException("MongoDB collection name not configured.");
 var configuredTemplateBasePath = builder.Configuration.GetSection("Templates:BasePath").Value;
 var templateBasePath = ResolveTemplateBasePath(configuredTemplateBasePath, builder.Environment.ContentRootPath);
+var chromiumExecutablePath = builder.Configuration.GetSection("Pdf:ChromiumExecutablePath").Value;
 var allowedCorsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? Array.Empty<string>();
 
@@ -40,7 +41,7 @@ builder.Services.AddLogging(configure =>
 builder.Services.AddApplicationServices();
 
 // Infrastructure Services
-builder.Services.AddInfrastructureServices(mongoConnectionString, databaseName, collectionName, templateBasePath);
+builder.Services.AddInfrastructureServices(mongoConnectionString, databaseName, collectionName, templateBasePath, chromiumExecutablePath);
 
 // Health Checks
 builder.Services.AddHealthChecks()
@@ -76,7 +77,8 @@ builder.Services.AddCors(options =>
         policyBuilder
             .WithOrigins(allowedCorsOrigins)
             .AllowAnyMethod()
-            .AllowAnyHeader();
+            .AllowAnyHeader()
+            .WithExposedHeaders("Content-Disposition");
     });
 });
 

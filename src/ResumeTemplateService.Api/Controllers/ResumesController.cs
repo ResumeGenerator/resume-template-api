@@ -23,17 +23,23 @@ public class ResumesController : ControllerBase
     private readonly IResumeRepository _resumeRepository;
     private readonly ITemplateRenderer _templateRenderer;
     private readonly IResumeMapper _resumeMapper;
+    private readonly IPdfRenderer _pdfRenderer;
+    private readonly IWordRenderer _wordRenderer;
     private readonly ILogger<ResumesController> _logger;
 
     public ResumesController(
         IResumeRepository resumeRepository,
         ITemplateRenderer templateRenderer,
         IResumeMapper resumeMapper,
+        IPdfRenderer pdfRenderer,
+        IWordRenderer wordRenderer,
         ILogger<ResumesController> logger)
     {
         _resumeRepository = resumeRepository;
         _templateRenderer = templateRenderer;
         _resumeMapper = resumeMapper;
+        _pdfRenderer = pdfRenderer;
+        _wordRenderer = wordRenderer;
         _logger = logger;
     }
 
@@ -130,6 +136,164 @@ public class ResumesController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Renders a resume template as PDF and returns the generated file.
+    /// </summary>
+    /// <param name="request">The PDF render request containing resume ID and template ID.</param>
+    /// <returns>A PDF generated from the selected resume template.</returns>
+    [HttpPost("pdf")]
+    [Produces("application/pdf")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> RenderResumePdf([FromBody] RenderResumePdfRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.ResumeId))
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = "ResumeId is required.",
+                    Details = "The 'resumeId' field cannot be empty."
+                });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.TemplateId))
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = "TemplateId is required.",
+                    Details = "The 'templateId' field cannot be empty."
+                });
+            }
+
+            var templateId = request.TemplateId.Trim();
+            _logger.LogInformation("Rendering resume PDF - ResumeId: {ResumeId}, TemplateId: {TemplateId}",
+                request.ResumeId, templateId);
+
+            var resumeProfile = await _resumeRepository.GetByIdAsync(request.ResumeId.Trim());
+            if (resumeProfile == null)
+            {
+                throw new InvalidOperationException($"Resume with id '{request.ResumeId}' not found.");
+            }
+
+            if (!await _templateRenderer.TemplateExistsAsync(templateId))
+            {
+                throw new InvalidOperationException($"Template '{templateId}' not found.");
+            }
+
+            var viewModel = _resumeMapper.Map(resumeProfile);
+            var html = await _templateRenderer.RenderAsync(templateId, viewModel);
+            var pdfBytes = await _pdfRenderer.RenderPdfAsync(html, HttpContext.RequestAborted);
+            var fileName = $"{Slugify(templateId)}.pdf";
+
+            return File(pdfBytes, "application/pdf", fileName);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Resume or template not found while rendering PDF");
+            return NotFound(new ErrorResponse
+            {
+                StatusCode = StatusCodes.Status404NotFound,
+                Message = ex.Message
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error rendering resume PDF");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+            {
+                StatusCode = StatusCodes.Status500InternalServerError,
+                Message = "An error occurred while rendering the resume PDF.",
+                Details = ex.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Renders a resume template as a Word document and returns the generated file.
+    /// </summary>
+    /// <param name="request">The Word render request containing resume ID and template ID.</param>
+    /// <returns>A Word document generated from the selected resume template.</returns>
+    [HttpPost("word")]
+    [Produces("application/vnd.openxmlformats-officedocument.wordprocessingml.document")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> RenderResumeWord([FromBody] RenderResumeWordRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.ResumeId))
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = "ResumeId is required.",
+                    Details = "The 'resumeId' field cannot be empty."
+                });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.TemplateId))
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = "TemplateId is required.",
+                    Details = "The 'templateId' field cannot be empty."
+                });
+            }
+
+            var templateId = request.TemplateId.Trim();
+            _logger.LogInformation("Rendering resume Word document - ResumeId: {ResumeId}, TemplateId: {TemplateId}",
+                request.ResumeId, templateId);
+
+            var resumeProfile = await _resumeRepository.GetByIdAsync(request.ResumeId.Trim());
+            if (resumeProfile == null)
+            {
+                throw new InvalidOperationException($"Resume with id '{request.ResumeId}' not found.");
+            }
+
+            if (!await _templateRenderer.TemplateExistsAsync(templateId))
+            {
+                throw new InvalidOperationException($"Template '{templateId}' not found.");
+            }
+
+            var viewModel = _resumeMapper.Map(resumeProfile);
+            var wordBytes = await _wordRenderer.RenderWordAsync(viewModel, templateId, HttpContext.RequestAborted);
+            var fileName = $"{Slugify(templateId)}.docx";
+
+            return File(
+                wordBytes,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                fileName);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Resume or template not found while rendering Word document");
+            return NotFound(new ErrorResponse
+            {
+                StatusCode = StatusCodes.Status404NotFound,
+                Message = ex.Message
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error rendering resume Word document");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+            {
+                StatusCode = StatusCodes.Status500InternalServerError,
+                Message = "An error occurred while rendering the resume Word document.",
+                Details = ex.Message
+            });
+        }
+    }
+
     private static IReadOnlyCollection<string> GetRequestedTemplateIds(RenderResumePreviewRequest request)
     {
         var templateIds = new List<string>();
@@ -149,5 +313,15 @@ public class ResumesController : ControllerBase
             .Select(templateId => templateId.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    private static string Slugify(string value)
+    {
+        var slug = new string(value
+            .ToLowerInvariant()
+            .Select(character => char.IsLetterOrDigit(character) ? character : '-')
+            .ToArray());
+
+        return string.Join("-", slug.Split('-', StringSplitOptions.RemoveEmptyEntries));
     }
 }
