@@ -44,12 +44,11 @@ USER dotnetuser
 EXPOSE 8080
 
 # Set environment
-ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-# Start application
-ENTRYPOINT ["dotnet", "ResumeTemplateService.Api.dll"]
+# Start application. Railway provides PORT; local Docker runs default to 8080.
+ENTRYPOINT ["sh", "-c", "exec dotnet ResumeTemplateService.Api.dll --urls http://0.0.0.0:${PORT:-8080}"]

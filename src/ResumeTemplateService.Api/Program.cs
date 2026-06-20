@@ -10,14 +10,29 @@ using System.Reflection;
 var builder = WebApplication.CreateBuilder(args);
 
 // Configuration
-var mongoConnectionString = builder.Configuration.GetSection("MongoDB:ConnectionString").Value
-    ?? builder.Configuration.GetConnectionString("MongoDB")
+var mongoConnectionString = FirstConfiguredValue(builder.Configuration,
+        builder.Configuration.GetSection("MongoDB:ConnectionString").Value,
+        builder.Configuration.GetConnectionString("MongoDB"),
+        builder.Configuration["MONGO_URL"],
+        builder.Configuration["MONGODB_URL"],
+        builder.Configuration["MONGODB_URI"],
+        builder.Configuration["DATABASE_URL"])
     ?? throw new InvalidOperationException("MongoDB connection string not configured.");
-var databaseName = builder.Configuration.GetSection("MongoDB:DatabaseName").Value
+var databaseName = FirstConfiguredValue(builder.Configuration,
+        builder.Configuration.GetSection("MongoDB:DatabaseName").Value,
+        builder.Configuration["MONGODB_DATABASE"],
+        builder.Configuration["MONGO_DATABASE"],
+        builder.Configuration["MONGO_INITDB_DATABASE"])
     ?? throw new InvalidOperationException("MongoDB database name not configured.");
-var collectionName = builder.Configuration.GetSection("MongoDB:CollectionName").Value
+var collectionName = FirstConfiguredValue(builder.Configuration,
+        builder.Configuration.GetSection("MongoDB:CollectionName").Value,
+        builder.Configuration["MONGODB_COLLECTION"],
+        builder.Configuration["MONGO_COLLECTION"])
     ?? throw new InvalidOperationException("MongoDB collection name not configured.");
-var editedCollectionName = builder.Configuration.GetSection("MongoDB:EditedCollectionName").Value;
+var editedCollectionName = FirstConfiguredValue(builder.Configuration,
+    builder.Configuration.GetSection("MongoDB:EditedCollectionName").Value,
+    builder.Configuration["MONGODB_EDITED_COLLECTION"],
+    builder.Configuration["MONGO_EDITED_COLLECTION"]);
 var configuredTemplateBasePath = builder.Configuration.GetSection("Templates:BasePath").Value;
 var templateBasePath = ResolveTemplateBasePath(configuredTemplateBasePath, builder.Environment.ContentRootPath);
 var chromiumExecutablePath = builder.Configuration.GetSection("Pdf:ChromiumExecutablePath").Value;
@@ -134,4 +149,35 @@ static string ResolveTemplateBasePath(string? configuredPath, string contentRoot
     }
 
     return Path.GetFullPath(Path.Combine(contentRootPath, "..", "..", "templates"));
+}
+
+static string? FirstConfiguredValue(IConfiguration configuration, params string?[] values)
+{
+    foreach (var value in values)
+    {
+        var resolvedValue = ResolveConfigurationPlaceholder(configuration, value);
+        if (!string.IsNullOrWhiteSpace(resolvedValue))
+        {
+            return resolvedValue;
+        }
+    }
+
+    return null;
+}
+
+static string? ResolveConfigurationPlaceholder(IConfiguration configuration, string? value)
+{
+    if (string.IsNullOrWhiteSpace(value))
+    {
+        return null;
+    }
+
+    if (!value.StartsWith("${", StringComparison.Ordinal) || !value.EndsWith("}", StringComparison.Ordinal))
+    {
+        return value;
+    }
+
+    var variableName = value[2..^1];
+    var resolvedValue = configuration[variableName] ?? Environment.GetEnvironmentVariable(variableName);
+    return string.IsNullOrWhiteSpace(resolvedValue) ? null : resolvedValue;
 }

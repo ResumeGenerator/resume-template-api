@@ -222,9 +222,34 @@ GET /health
 ### Environment Variables
 
 - `ASPNETCORE_ENVIRONMENT`: Set to `Development`, `Staging`, or `Production`
-- `ASPNETCORE_URLS`: URL the API listens on (default: `http://+:5000`)
+- `ASPNETCORE_URLS`: URL the API listens on when not using the Dockerfile (Railway: `http://+:${PORT}`)
 - `MongoDB__ConnectionString`: MongoDB connection string
 - `MongoDB__DatabaseName`: MongoDB database name
+- `MongoDB__CollectionName`: Source resume collection name
+- `MongoDB__EditedCollectionName`: Edited resume collection name
+
+### Railway MongoDB Variables
+
+For Railway, set these variables on the API service:
+
+```env
+ASPNETCORE_ENVIRONMENT=Production
+MongoDB__ConnectionString=${{MongoDB.MONGO_URL}}
+MongoDB__DatabaseName=resume_parser
+MongoDB__CollectionName=parsed_resumes
+MongoDB__EditedCollectionName=edited_resumes
+```
+
+The API also accepts Railway-style flat variables directly:
+
+```env
+MONGO_URL=mongodb://...
+MONGODB_URL=mongodb://...
+MONGODB_URI=mongodb://...
+MONGODB_DATABASE=resume_parser
+MONGODB_COLLECTION=parsed_resumes
+MONGODB_EDITED_COLLECTION=edited_resumes
+```
 
 ## Database Setup
 
