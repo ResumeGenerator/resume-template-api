@@ -238,7 +238,7 @@ MongoDB__ConnectionString=${{MongoDB.MONGO_URL}}
 MongoDB__DatabaseName=resume_parser
 MongoDB__CollectionName=parsed_resumes
 MongoDB__EditedCollectionName=edited_resumes
-ALLOWED_ORIGIN=https://your-frontend-domain.up.railway.app
+ALLOWED_ORIGIN=https://resume-generator-spa-staging.up.railway.app
 ```
 
 The API also accepts Railway-style flat variables directly:

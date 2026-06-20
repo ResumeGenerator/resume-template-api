@@ -160,15 +160,29 @@ static string[] ResolveAllowedCorsOrigins(IConfiguration configuration)
             configuration["ALLOWED_ORIGIN"],
             configuration["ALLOWED_ORIGINS"],
             configuration["CORS_ALLOWED_ORIGIN"],
-            configuration["CORS_ALLOWED_ORIGINS"]
+            configuration["CORS_ALLOWED_ORIGINS"],
+            configuration["FRONTEND_URL"],
+            configuration["CLIENT_URL"]
         }
         .Where(value => !string.IsNullOrWhiteSpace(value))
         .SelectMany(value => value!.Split(',', ';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
 
     return configuredOrigins
         .Concat(environmentOrigins)
+        .Select(NormalizeCorsOrigin)
+        .Where(origin => origin is not null)
         .Distinct(StringComparer.OrdinalIgnoreCase)
-        .ToArray();
+        .ToArray()!;
+}
+
+static string? NormalizeCorsOrigin(string? origin)
+{
+    if (string.IsNullOrWhiteSpace(origin))
+    {
+        return null;
+    }
+
+    return origin.Trim().TrimEnd('/');
 }
 
 static string? FirstConfiguredValue(IConfiguration configuration, params string?[] values)
