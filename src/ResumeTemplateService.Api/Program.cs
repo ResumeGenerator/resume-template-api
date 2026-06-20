@@ -96,7 +96,12 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAngularApp", policyBuilder =>
     {
         policyBuilder
-            .WithOrigins(allowedCorsOrigins)
+            .SetIsOriginAllowed(origin =>
+            {
+                var normalizedOrigin = NormalizeCorsOrigin(origin);
+                return normalizedOrigin is not null &&
+                    allowedCorsOrigins.Contains(normalizedOrigin, StringComparer.OrdinalIgnoreCase);
+            })
             .AllowAnyMethod()
             .AllowAnyHeader()
             .WithExposedHeaders("Content-Disposition");
@@ -104,6 +109,7 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+app.Logger.LogInformation("Allowed CORS origins: {AllowedCorsOrigins}", string.Join(", ", allowedCorsOrigins));
 
 // Middleware
 app.UseMiddleware<GlobalExceptionMiddleware>();
@@ -182,7 +188,7 @@ static string? NormalizeCorsOrigin(string? origin)
         return null;
     }
 
-    return origin.Trim().TrimEnd('/');
+    return origin.Trim().Trim('"', '\'').TrimEnd('/');
 }
 
 static string? FirstConfiguredValue(IConfiguration configuration, params string?[] values)
