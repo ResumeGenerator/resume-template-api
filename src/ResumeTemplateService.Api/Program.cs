@@ -36,8 +36,7 @@ var editedCollectionName = FirstConfiguredValue(builder.Configuration,
 var configuredTemplateBasePath = builder.Configuration.GetSection("Templates:BasePath").Value;
 var templateBasePath = ResolveTemplateBasePath(configuredTemplateBasePath, builder.Environment.ContentRootPath);
 var chromiumExecutablePath = builder.Configuration.GetSection("Pdf:ChromiumExecutablePath").Value;
-var allowedCorsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-    ?? Array.Empty<string>();
+var allowedCorsOrigins = ResolveAllowedCorsOrigins(builder.Configuration);
 
 // Services
 builder.Services.AddControllers();
@@ -149,6 +148,27 @@ static string ResolveTemplateBasePath(string? configuredPath, string contentRoot
     }
 
     return Path.GetFullPath(Path.Combine(contentRootPath, "..", "..", "templates"));
+}
+
+static string[] ResolveAllowedCorsOrigins(IConfiguration configuration)
+{
+    var configuredOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+        ?? Array.Empty<string>();
+
+    var environmentOrigins = new[]
+        {
+            configuration["ALLOWED_ORIGIN"],
+            configuration["ALLOWED_ORIGINS"],
+            configuration["CORS_ALLOWED_ORIGIN"],
+            configuration["CORS_ALLOWED_ORIGINS"]
+        }
+        .Where(value => !string.IsNullOrWhiteSpace(value))
+        .SelectMany(value => value!.Split(',', ';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
+
+    return configuredOrigins
+        .Concat(environmentOrigins)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
 }
 
 static string? FirstConfiguredValue(IConfiguration configuration, params string?[] values)
