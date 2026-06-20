@@ -21,6 +21,7 @@ public static class ServiceCollectionExtensions
         string mongoConnectionString,
         string databaseName,
         string collectionName,
+        string? editedCollectionName,
         string templateBasePath,
         string? chromiumExecutablePath)
     {
@@ -34,6 +35,7 @@ public static class ServiceCollectionExtensions
             new ResumeRepository(
                 sp.GetRequiredService<IMongoDatabase>(),
                 collectionName,
+                editedCollectionName,
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ResumeRepository>>()));
 
         // RazorLight Engine

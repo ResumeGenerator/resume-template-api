@@ -12,6 +12,7 @@ services:
       MongoDB__ConnectionString: "mongodb://resume-parser-mongo:27017"
       MongoDB__DatabaseName: "resume_parser"
       MongoDB__CollectionName: "parsed_resumes"
+      MongoDB__EditedCollectionName: "edited_resumes"
     ports:
       - "8080:8080"
     volumes:

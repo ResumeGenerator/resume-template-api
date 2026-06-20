@@ -17,6 +17,7 @@ var databaseName = builder.Configuration.GetSection("MongoDB:DatabaseName").Valu
     ?? throw new InvalidOperationException("MongoDB database name not configured.");
 var collectionName = builder.Configuration.GetSection("MongoDB:CollectionName").Value
     ?? throw new InvalidOperationException("MongoDB collection name not configured.");
+var editedCollectionName = builder.Configuration.GetSection("MongoDB:EditedCollectionName").Value;
 var configuredTemplateBasePath = builder.Configuration.GetSection("Templates:BasePath").Value;
 var templateBasePath = ResolveTemplateBasePath(configuredTemplateBasePath, builder.Environment.ContentRootPath);
 var chromiumExecutablePath = builder.Configuration.GetSection("Pdf:ChromiumExecutablePath").Value;
@@ -41,7 +42,13 @@ builder.Services.AddLogging(configure =>
 builder.Services.AddApplicationServices();
 
 // Infrastructure Services
-builder.Services.AddInfrastructureServices(mongoConnectionString, databaseName, collectionName, templateBasePath, chromiumExecutablePath);
+builder.Services.AddInfrastructureServices(
+    mongoConnectionString,
+    databaseName,
+    collectionName,
+    editedCollectionName,
+    templateBasePath,
+    chromiumExecutablePath);
 
 // Health Checks
 builder.Services.AddHealthChecks()

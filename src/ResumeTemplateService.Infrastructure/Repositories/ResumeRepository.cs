@@ -11,12 +11,20 @@ namespace ResumeTemplateService.Infrastructure.Repositories;
 public class ResumeRepository : IResumeRepository
 {
     private readonly IMongoCollection<BsonDocument> _collection;
+    private readonly IMongoCollection<BsonDocument>? _editedCollection;
     private readonly ILogger<ResumeRepository> _logger;
 
-    public ResumeRepository(IMongoDatabase database, string collectionName, ILogger<ResumeRepository> logger)
+    public ResumeRepository(
+        IMongoDatabase database,
+        string collectionName,
+        string? editedCollectionName,
+        ILogger<ResumeRepository> logger)
     {
         _logger = logger;
         _collection = database.GetCollection<BsonDocument>(collectionName);
+        _editedCollection = string.IsNullOrWhiteSpace(editedCollectionName)
+            ? null
+            : database.GetCollection<BsonDocument>(editedCollectionName);
     }
 
     public async Task<ResumeProfile?> GetByIdAsync(string id)
@@ -27,6 +35,15 @@ public class ResumeRepository : IResumeRepository
 
             var filter = BuildIdFilter(id);
             var document = await _collection.Find(filter).FirstOrDefaultAsync();
+            if (document != null && _editedCollection != null)
+            {
+                document = await GetLatestEditedCopyAsync(id) ?? document;
+            }
+            else if (_editedCollection != null)
+            {
+                document = await _editedCollection.Find(filter).FirstOrDefaultAsync();
+            }
+
             var resume = document == null ? null : MapDocument(document);
 
             if (resume != null)
@@ -56,13 +73,30 @@ public class ResumeRepository : IResumeRepository
             var filter = BuildIdFilter(id);
             var count = await _collection.CountDocumentsAsync(filter);
 
-            return count > 0;
+            if (count > 0)
+            {
+                return true;
+            }
+
+            return _editedCollection is not null && await _editedCollection.CountDocumentsAsync(filter) > 0;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error checking if resume exists: {ResumeId}", id);
             throw;
         }
+    }
+
+    private async Task<BsonDocument?> GetLatestEditedCopyAsync(string originalResumeId)
+    {
+        var filter = Builders<BsonDocument>.Filter.Eq("originalResumeId", originalResumeId);
+        var sort = Builders<BsonDocument>.Sort
+            .Descending("updatedAt")
+            .Descending("createdAt");
+
+        return _editedCollection is null
+            ? null
+            : await _editedCollection.Find(filter).Sort(sort).FirstOrDefaultAsync();
     }
 
     private static FilterDefinition<BsonDocument> BuildIdFilter(string id)
