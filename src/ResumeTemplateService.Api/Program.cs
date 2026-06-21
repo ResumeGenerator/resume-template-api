@@ -128,7 +128,7 @@ app.UseMiddleware<GlobalExceptionMiddleware>();
 // Routing
 app.UseRouting();
 
-app.get('/', (req, res) => res.send('ResumeTemplateService API running'));
+app.MapGet("/", () => Results.Ok("ResumeTemplateService API running"));
 
 // CORS
 app.UseCors("AllowAngularApp");
