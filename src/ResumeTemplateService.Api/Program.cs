@@ -114,7 +114,7 @@ builder.Services.AddCors(options =>
             .WithExposedHeaders("Content-Disposition");
     });
 });
-app.get('/', (req, res) => res.send('ResumeTemplateService API running'));
+
 var app = builder.Build();
 app.Logger.LogInformation(
     "Runtime URLs - PORT: {Port}, ASPNETCORE_URLS: {AspNetCoreUrls}",
@@ -127,6 +127,8 @@ app.UseMiddleware<GlobalExceptionMiddleware>();
 
 // Routing
 app.UseRouting();
+
+app.get('/', (req, res) => res.send('ResumeTemplateService API running'));
 
 // CORS
 app.UseCors("AllowAngularApp");
