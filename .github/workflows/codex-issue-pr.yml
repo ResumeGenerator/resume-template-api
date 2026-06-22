@@ -3,6 +3,8 @@ name: OpenAI issue to PR
 on:
   issues:
     types: [opened, edited, reopened]
+  repository_dispatch:
+    types: [orchestrator_issue]
   workflow_dispatch:
     inputs:
       issue_number:
@@ -20,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >-
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'repository_dispatch' ||
       github.event.issue.pull_request == null
     outputs:
       final_message: ${{ steps.run_codex.outputs.final-message }}
@@ -35,6 +38,25 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            if (context.eventName === 'repository_dispatch') {
+              const payload = context.payload.client_payload || {};
+              const issueNumber = Number(payload.orchestrator_issue_number || 0);
+
+              if (!issueNumber || !payload.orchestrator_issue_title || !payload.orchestrator_issue_url) {
+                core.setFailed('repository_dispatch payload must include orchestrator_issue_number, orchestrator_issue_title, and orchestrator_issue_url.');
+                return;
+              }
+
+              core.setOutput('number', String(issueNumber));
+              core.setOutput('title', payload.orchestrator_issue_title);
+              core.setOutput('body', payload.orchestrator_issue_body || '');
+              core.setOutput('url', payload.orchestrator_issue_url);
+              core.setOutput('author', payload.orchestrator_issue_author || 'unknown');
+              core.setOutput('target_role', payload.target_role || 'unspecified');
+              core.setOutput('is_local_issue', 'false');
+              return;
+            }
+
             const issueNumber = context.eventName === 'workflow_dispatch'
               ? Number(context.payload.inputs.issue_number)
               : context.payload.issue.number;
@@ -50,6 +72,8 @@ jobs:
             core.setOutput('body', issue.body || '');
             core.setOutput('url', issue.html_url);
             core.setOutput('author', issue.user?.login || 'unknown');
+            core.setOutput('target_role', 'local');
+            core.setOutput('is_local_issue', 'true');
 
       - name: Generate Codex prompt
         uses: actions/github-script@v7
@@ -59,6 +83,8 @@ jobs:
           ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
           ISSUE_URL: ${{ steps.issue.outputs.url }}
           ISSUE_BODY: ${{ steps.issue.outputs.body }}
+          ISSUE_TARGET_ROLE: ${{ steps.issue.outputs.target_role }}
+          ISSUE_IS_LOCAL: ${{ steps.issue.outputs.is_local_issue }}
         with:
           script: |
             const fs = require('node:fs');
@@ -89,6 +115,11 @@ jobs:
             Title: ${process.env.ISSUE_TITLE}
             Author: @${process.env.ISSUE_AUTHOR}
             URL: ${process.env.ISSUE_URL}
+            Target role: ${process.env.ISSUE_TARGET_ROLE}
+            Issue is local to this repo: ${process.env.ISSUE_IS_LOCAL}
+
+            If this issue was dispatched from an orchestrator repo and this repository does not need changes,
+            make no file edits and explain why in the final message.
 
             Body:
             ${process.env.ISSUE_BODY || '(No issue body provided.)'}
@@ -160,6 +191,8 @@ jobs:
           CODEX_FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
           CODEX_OUTCOME: ${{ steps.run_codex.outcome }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          ISSUE_URL: ${{ steps.issue.outputs.url }}
+          ISSUE_IS_LOCAL: ${{ steps.issue.outputs.is_local_issue }}
         run: |
           set -euo pipefail
 
@@ -174,7 +207,11 @@ jobs:
 
           pr_body="$(mktemp)"
           {
-            echo "Closes #${ISSUE_NUMBER}"
+            if [ "${ISSUE_IS_LOCAL}" = "true" ]; then
+              echo "Closes #${ISSUE_NUMBER}"
+            else
+              echo "Part of orchestrator issue: ${ISSUE_URL}"
+            fi
             echo
             echo "Codex step outcome: ${CODEX_OUTCOME}"
             echo
@@ -209,7 +246,7 @@ jobs:
           fi
 
       - name: Comment when no changes were made
-        if: steps.changes.outputs.has_changes == 'false'
+        if: steps.changes.outputs.has_changes == 'false' && steps.issue.outputs.is_local_issue == 'true'
         uses: actions/github-script@v7
         env:
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
@@ -234,7 +271,7 @@ jobs:
             });
 
       - name: Comment when workflow failed
-        if: failure()
+        if: failure() && steps.issue.outputs.is_local_issue == 'true'
         uses: actions/github-script@v7
         env:
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
