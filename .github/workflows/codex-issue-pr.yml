@@ -242,7 +242,11 @@ jobs:
               echo "Settings -> Actions -> General -> Workflow permissions -> Allow GitHub Actions to create and approve pull requests."
             } > "$pr_body"
 
-            gh issue comment "${ISSUE_NUMBER}" --body-file "$pr_body"
+            if [ "${ISSUE_IS_LOCAL}" = "true" ]; then
+              gh issue comment "${ISSUE_NUMBER}" --body-file "$pr_body"
+            else
+              cat "$pr_body"
+            fi
           fi
 
       - name: Comment when no changes were made
