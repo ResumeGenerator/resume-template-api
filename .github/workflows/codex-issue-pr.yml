@@ -1,0 +1,141 @@
+name: Codex issue implementation
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue number for Codex to implement"
+        required: true
+        type: number
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  implement:
+    name: Implement issue with Codex
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.issue.pull_request == null &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
+      )
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Ensure OpenAI API key is configured
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "OPENAI_API_KEY repository secret is required for openai/codex-action."
+            exit 1
+          fi
+
+      - name: Resolve GitHub issue context
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+        run: |
+          gh issue view "$ISSUE_NUMBER" \
+            --json number,title,body,url,author,labels,createdAt,updatedAt \
+            > issue-context.json
+
+      - name: Build Codex prompt from issue
+        run: |
+          mkdir -p .github/codex/generated
+          cp .github/codex/prompts/implement-issue.md .github/codex/generated/issue-prompt.md
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          issue = json.loads(Path("issue-context.json").read_text(encoding="utf-8"))
+          labels = ", ".join(label["name"] for label in issue.get("labels", [])) or "(none)"
+          author = issue.get("author", {}).get("login", "(unknown)")
+          body = issue.get("body") or "(no issue body provided)"
+
+          with Path(".github/codex/generated/issue-prompt.md").open("a", encoding="utf-8") as prompt:
+              prompt.write("\n\n")
+              prompt.write(f"- Issue: #{issue['number']}\n")
+              prompt.write(f"- Title: {issue['title']}\n")
+              prompt.write(f"- URL: {issue['url']}\n")
+              prompt.write(f"- Author: {author}\n")
+              prompt.write(f"- Labels: {labels}\n")
+              prompt.write(f"- Created: {issue.get('createdAt', '')}\n")
+              prompt.write(f"- Updated: {issue.get('updatedAt', '')}\n")
+              prompt.write("\n## Issue Body\n\n")
+              prompt.write(body)
+              prompt.write("\n")
+          PY
+
+      - name: Allow Codex to edit workspace
+        run: chmod -R u+rwX,g+rwX "$GITHUB_WORKSPACE"
+
+      - name: Run Codex
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: .github/codex/generated/issue-prompt.md
+          sandbox: workspace-write
+          output-file: codex-output.md
+
+      - name: Create pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+          CODEX_FINAL_MESSAGE: ${{ steps.codex.outputs.final-message }}
+        run: |
+          rm -rf .github/codex/generated issue-context.json codex-output.md
+
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No repository changes were produced by Codex."
+            gh issue comment "$ISSUE_NUMBER" --body "Codex ran for this issue but did not produce repository changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          BRANCH="codex/issue-${ISSUE_NUMBER}-${GITHUB_RUN_ID}"
+          git checkout -B "$BRANCH"
+          git add -A
+          git commit -m "Implement issue #${ISSUE_NUMBER} with Codex"
+          git push --set-upstream origin "$BRANCH"
+
+          {
+            echo "## Summary"
+            echo
+            echo "Codex generated this pull request from issue #${ISSUE_NUMBER}."
+            echo
+            echo "## Codex final message"
+            echo
+            if [ -n "$CODEX_FINAL_MESSAGE" ]; then
+              printf '%s\n' "$CODEX_FINAL_MESSAGE"
+            else
+              echo "Codex did not return a final message."
+            fi
+            echo
+            echo "## Related issue"
+            echo
+            echo "Relates to #${ISSUE_NUMBER}"
+          } > pr-body.md
+
+          PR_URL="$(gh pr create \
+            --base "${{ github.event.repository.default_branch }}" \
+            --head "$BRANCH" \
+            --title "Codex: implement issue #${ISSUE_NUMBER}" \
+            --body-file pr-body.md)"
+
+          echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
+          gh issue comment "$ISSUE_NUMBER" --body "Codex created a pull request for this issue: $PR_URL"
