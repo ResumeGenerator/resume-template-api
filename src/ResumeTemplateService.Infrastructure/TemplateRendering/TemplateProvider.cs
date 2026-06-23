@@ -67,6 +67,7 @@ public class TemplateProvider : ITemplateProvider
         {
             "professional-dark-blue" => "A professional dark blue themed resume template",
             "modern-minimal" => "A modern minimal resume template",
+            "classic-sidebar-gray" => "A classic gray sidebar resume template with a bold name band",
             _ => "Resume template"
         };
     }
