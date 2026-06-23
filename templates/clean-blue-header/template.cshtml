@@ -1,0 +1,167 @@
+@using ResumeTemplateService.Domain.ValueObjects
+@model ResumeViewModel
+@{
+    var summaryText = Model.SummaryPoints.Any() ? string.Join(" ", Model.SummaryPoints.Take(3)) : Model.Headline;
+    var highlights = Model.CoreCompetencies
+        .Concat(Model.TechnicalHighlights)
+        .Concat(Model.LeadershipHighlights)
+        .Concat(Model.ProjectHighlights)
+        .Concat(Model.IndustryHighlights)
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .Distinct()
+        .Take(8)
+        .ToList();
+    var skills = Model.SkillGroups
+        .SelectMany(group => group.Skills)
+        .Concat(Model.TechnicalSkills.Select(skill => skill.Skill))
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .Distinct()
+        .Take(8)
+        .ToList();
+    var displayHighlights = highlights.Any() ? highlights : skills;
+}
+<div style="font-family: Arial, Helvetica, sans-serif; color: #1f1f1f; background: #e8edf2; padding: 18px; line-height: 1.34;">
+    <div style="max-width: 816px; margin: 0 auto; background: #ffffff; box-shadow: 0 14px 32px rgba(0,0,0,0.14); border: 1px solid #c3ced8; overflow: hidden;">
+        <header style="background: #5da0d8; color: #ffffff; padding: 48px 64px 28px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: start;">
+            <div style="font-size: 34px; line-height: 1.14; font-weight: 900; text-transform: uppercase; letter-spacing: 0;">
+                @Model.PersonalInfo.FirstName<br />
+                @Model.PersonalInfo.LastName
+            </div>
+            <div style="font-size: 12px; line-height: 1.38; padding-top: 4px;">
+                @if (!string.IsNullOrWhiteSpace(Model.PersonalInfo.Location))
+                {
+                    <div style="margin-bottom: 6px;">
+                        <div style="font-weight: 900;">Address:</div>
+                        <div>@Model.PersonalInfo.Location</div>
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.PersonalInfo.Phone))
+                {
+                    <div style="margin-bottom: 6px;">
+                        <div style="font-weight: 900;">Phone:</div>
+                        <div>@Model.PersonalInfo.Phone</div>
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.PersonalInfo.Email))
+                {
+                    <div>
+                        <div style="font-weight: 900;">Email:</div>
+                        <a style="color: #ffffff; text-decoration: none;" href="mailto:@Model.PersonalInfo.Email">@Model.PersonalInfo.Email</a>
+                    </div>
+                }
+            </div>
+        </header>
+
+        <main style="padding: 26px 64px 48px;">
+            @if (!string.IsNullOrWhiteSpace(summaryText))
+            {
+                <section style="margin-bottom: 20px;">
+                    <div style="font-size: 19px; font-weight: 900; border-bottom: 1px solid #9aa5ad; padding-bottom: 6px; margin-bottom: 10px;">Summary</div>
+                    <div style="font-size: 12px;">@summaryText</div>
+                </section>
+            }
+
+            @if (displayHighlights.Any())
+            {
+                <section style="margin-bottom: 20px;">
+                    <div style="font-size: 19px; font-weight: 900; border-bottom: 1px solid #9aa5ad; padding-bottom: 6px; margin-bottom: 10px;">Skill Highlights</div>
+                    <ul style="columns: 2; column-gap: 58px; margin: 0; padding-left: 28px; font-size: 12px;">
+                        @foreach (var highlight in displayHighlights)
+                        {
+                            <li style="break-inside: avoid; margin-bottom: 4px;">@highlight</li>
+                        }
+                    </ul>
+                </section>
+            }
+
+            @if (Model.Experience.Any())
+            {
+                <section style="margin-bottom: 20px;">
+                    <div style="font-size: 19px; font-weight: 900; border-bottom: 1px solid #9aa5ad; padding-bottom: 6px; margin-bottom: 10px;">Experience</div>
+                    @foreach (var exp in Model.Experience)
+                    {
+                        <div style="margin-bottom: 13px; break-inside: avoid; page-break-inside: avoid;">
+                            <div style="font-size: 12px;">
+                                <span style="font-weight: 900;">@exp.JobTitle</span>
+                                <span> - @exp.DateRange</span>
+                            </div>
+                            <div style="font-size: 12px; font-weight: 900;">
+                                @exp.Company@if (!string.IsNullOrWhiteSpace(exp.Location)) { <span>, @exp.Location</span> }
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(exp.Description))
+                            {
+                                <div style="font-size: 12px; margin-top: 3px;">@exp.Description</div>
+                            }
+                            @if (exp.Achievements.Any())
+                            {
+                                <ul style="margin: 4px 0 0; padding-left: 24px; font-size: 12px;">
+                                    @foreach (var achievement in exp.Achievements.Take(6))
+                                    {
+                                        <li style="margin-bottom: 3px;">@achievement</li>
+                                    }
+                                </ul>
+                            }
+                            @if (exp.Technologies.Any())
+                            {
+                                <div style="font-size: 11px; margin-top: 4px;"><span style="font-weight: 900;">Technologies:</span> @string.Join(", ", exp.Technologies)</div>
+                            }
+                        </div>
+                    }
+                </section>
+            }
+
+            @if (Model.Education.Any())
+            {
+                <section style="margin-bottom: 20px;">
+                    <div style="font-size: 19px; font-weight: 900; border-bottom: 1px solid #9aa5ad; padding-bottom: 6px; margin-bottom: 10px;">Education</div>
+                    @foreach (var edu in Model.Education)
+                    {
+                        <div style="font-size: 12px; margin-bottom: 9px; break-inside: avoid; page-break-inside: avoid;">
+                            <span>@edu.Degree@if (!string.IsNullOrWhiteSpace(edu.FieldOfStudy)) { <span>: @edu.FieldOfStudy</span> }</span>
+                            @if (!string.IsNullOrWhiteSpace(edu.DateRange))
+                            {
+                                <span> - @edu.DateRange</span>
+                            }
+                            <div style="font-weight: 900;">@edu.Institution</div>
+                        </div>
+                    }
+                </section>
+            }
+
+            @if (Model.CareerSnapshot.FocusAreas.Any())
+            {
+                <section style="margin-bottom: 20px;">
+                    <div style="font-size: 19px; font-weight: 900; border-bottom: 1px solid #9aa5ad; padding-bottom: 6px; margin-bottom: 10px;">Languages</div>
+                    <div style="font-size: 12px;">
+                        @foreach (var focusArea in Model.CareerSnapshot.FocusAreas)
+                        {
+                            <div>@focusArea</div>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (Model.Certifications.Any())
+            {
+                <section>
+                    <div style="font-size: 19px; font-weight: 900; border-bottom: 1px solid #9aa5ad; padding-bottom: 6px; margin-bottom: 10px;">Certifications</div>
+                    @foreach (var cert in Model.Certifications)
+                    {
+                        <div style="font-size: 12px; margin-bottom: 7px; break-inside: avoid; page-break-inside: avoid;">
+                            <span style="font-weight: 900;">@cert.Name</span>
+                            @if (!string.IsNullOrWhiteSpace(cert.Issuer))
+                            {
+                                <span>: @cert.Issuer</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(cert.IssueDate))
+                            {
+                                <span>, @cert.IssueDate</span>
+                            }
+                        </div>
+                    }
+                </section>
+            }
+        </main>
+        <div style="height: 28px; background: #5da0d8;"></div>
+    </div>
+</div>
