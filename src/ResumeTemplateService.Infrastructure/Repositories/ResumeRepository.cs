@@ -33,16 +33,7 @@ public class ResumeRepository : IResumeRepository
         {
             _logger.LogInformation("Fetching resume with id: {ResumeId}", id);
 
-            var filter = BuildIdFilter(id);
-            var document = await _collection.Find(filter).FirstOrDefaultAsync();
-            if (document != null)
-            {
-                document = await GetLatestEditedCopyAsync(id) ?? document;
-            }
-            else
-            {
-                document = await _editedCollection.Find(filter).FirstOrDefaultAsync();
-            }
+            var document = await GetResumeDocumentAsync(id);
 
             var resume = document == null ? null : MapDocument(document);
 
@@ -87,6 +78,26 @@ public class ResumeRepository : IResumeRepository
         }
     }
 
+    public async Task<string> GetTemplateIdAsync(string id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var document = await GetResumeDocumentAsync(id, cancellationToken);
+            if (document == null)
+            {
+                return string.Empty;
+            }
+
+            var profile = GetDocument(document, "profile");
+            return profile is null ? string.Empty : GetString(profile, "template");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching template id for resume: {ResumeId}", id);
+            throw;
+        }
+    }
+
     public async Task<ResumeProfile> SaveEditedAsync(
         string originalResumeId,
         string editedResumeJson,
@@ -104,16 +115,17 @@ public class ResumeRepository : IResumeRepository
                 throw new ArgumentException("Edited resume content is required.", nameof(editedResumeJson));
             }
 
+            var resumeId = originalResumeId.Trim();
             var incomingDocument = BsonDocument.Parse(editedResumeJson);
-            var document = NormalizeEditedDocument(originalResumeId.Trim(), incomingDocument);
-            var latestEditedCopy = await GetLatestEditedCopyAsync(originalResumeId.Trim(), cancellationToken);
+            var document = NormalizeEditedDocument(resumeId, incomingDocument);
+            var latestEditedCopy = await GetLatestEditedCopyAsync(resumeId, cancellationToken);
             var nextVersion = latestEditedCopy is null ? 1 : GetInt(latestEditedCopy, "version") + 1;
             var now = DateTime.UtcNow;
 
             document["_id"] = ObjectId.GenerateNewId();
-            document["id"] = originalResumeId.Trim();
-            document["resumeId"] = originalResumeId.Trim();
-            document["originalResumeId"] = originalResumeId.Trim();
+            document["id"] = resumeId;
+            document["resumeId"] = resumeId;
+            document["originalResumeId"] = resumeId;
             document["version"] = nextVersion;
             document["status"] = "edited";
             document["updatedAt"] = now;
@@ -137,6 +149,20 @@ public class ResumeRepository : IResumeRepository
             _logger.LogError(ex, "Error saving edited resume with id: {ResumeId}", originalResumeId);
             throw;
         }
+    }
+
+    private async Task<BsonDocument?> GetResumeDocumentAsync(
+        string id,
+        CancellationToken cancellationToken = default)
+    {
+        var editedDocument = await GetLatestEditedCopyAsync(id, cancellationToken);
+        if (editedDocument != null)
+        {
+            return editedDocument;
+        }
+
+        var filter = BuildIdFilter(id);
+        return await _collection.Find(filter).FirstOrDefaultAsync(cancellationToken);
     }
 
     private async Task<BsonDocument?> GetLatestEditedCopyAsync(
@@ -196,6 +222,10 @@ public class ResumeRepository : IResumeRepository
         {
             document.Remove("_id");
         }
+
+        document.Remove("id");
+        document.Remove("resumeId");
+        document.Remove("originalResumeId");
 
         if (document.Contains("profile") && document["profile"].IsBsonDocument)
         {
@@ -270,7 +300,7 @@ public class ResumeRepository : IResumeRepository
                 PrimarySkills = skills,
                 SecondarySkills = new List<string>(),
                 SoftSkills = new List<string>(),
-                Languages = GetSectionStringItems(data, "language"),
+                Languages = GetSectionItemValues(data, "language", "language"),
                 SkillsMatrix = new SkillsMatrix
                 {
                     TechnicalProficiency = skills
@@ -491,6 +521,18 @@ public class ResumeRepository : IResumeRepository
     {
         var section = GetSection(data, type);
         return section is null ? new List<string>() : GetStringArray(section, "items");
+    }
+
+    private static List<string> GetSectionItemValues(BsonDocument data, string type, string fieldName)
+    {
+        var documentItems = GetSectionDocumentItems(data, type)
+            .Select(item => GetString(item, fieldName))
+            .Where(item => !string.IsNullOrWhiteSpace(item));
+
+        return documentItems
+            .Concat(GetSectionStringItems(data, type))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private static List<BsonDocument> GetDocumentArray(BsonDocument document, string name)

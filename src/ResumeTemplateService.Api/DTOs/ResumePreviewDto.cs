@@ -21,12 +21,6 @@ public class RenderResumePdfRequest
     public string TemplateId { get; set; } = null!;
 }
 
-public class RenderResumeWordRequest
-{
-    public string ResumeId { get; set; } = null!;
-    public string TemplateId { get; set; } = null!;
-}
-
 /// <summary>
 /// Request to save edited resume content and render an HTML preview.
 /// </summary>
@@ -75,6 +69,43 @@ public class SaveEditedResumePreviewResponse
 
     /// <summary>
     /// Rendered HTML for the edited resume and selected template.
+    /// </summary>
+    public string Html { get; set; } = null!;
+}
+
+/// <summary>
+/// Response returned after saving an edited resume document.
+/// </summary>
+public class SaveEditedResumeResponse
+{
+    /// <summary>
+    /// Parsed resume id associated with the saved edited document.
+    /// </summary>
+    public string ResumeId { get; set; } = null!;
+
+    /// <summary>
+    /// Save result message.
+    /// </summary>
+    public string Message { get; set; } = null!;
+}
+
+/// <summary>
+/// Response containing rendered HTML for a resume.
+/// </summary>
+public class RenderResumeHtmlResponse
+{
+    /// <summary>
+    /// Parsed resume id used to render the HTML.
+    /// </summary>
+    public string ResumeId { get; set; } = null!;
+
+    /// <summary>
+    /// Template id used to render the HTML.
+    /// </summary>
+    public string TemplateId { get; set; } = null!;
+
+    /// <summary>
+    /// Rendered HTML.
     /// </summary>
     public string Html { get; set; } = null!;
 }

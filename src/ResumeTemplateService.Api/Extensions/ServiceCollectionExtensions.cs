@@ -62,8 +62,6 @@ public static class ServiceCollectionExtensions
                 chromiumExecutablePath,
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ChromiumPdfRenderer>>()));
 
-        services.AddScoped<IWordRenderer, DocxWordRenderer>();
-
         return services;
     }
 }
