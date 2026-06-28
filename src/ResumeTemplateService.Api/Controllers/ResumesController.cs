@@ -42,6 +42,66 @@ public class ResumesController : ControllerBase
     }
 
     /// <summary>
+    /// Gets parsed resume documents.
+    /// </summary>
+    /// <param name="limit">Maximum number of parsed resumes to return.</param>
+    /// <param name="skip">Number of parsed resumes to skip.</param>
+    /// <returns>A paged list of parsed resume documents.</returns>
+    [HttpGet]
+    [ProducesResponseType(typeof(ParsedResumeListResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetParsedResumes([FromQuery] int limit = 100, [FromQuery] int skip = 0)
+    {
+        try
+        {
+            if (limit <= 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = "Limit must be greater than zero.",
+                    Details = "Pass a positive limit value."
+                });
+            }
+
+            if (skip < 0)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = "Skip cannot be negative.",
+                    Details = "Pass zero or a positive skip value."
+                });
+            }
+
+            var normalizedLimit = Math.Min(limit, 500);
+            var (documentsJson, total) = await _resumeRepository.ListParsedDocumentsJsonAsync(
+                normalizedLimit,
+                skip,
+                HttpContext.RequestAborted);
+
+            return Ok(new ParsedResumeListResponse
+            {
+                Limit = normalizedLimit,
+                Skip = skip,
+                Total = total,
+                Resumes = documentsJson.Select(ToJsonElement).ToList()
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching parsed resumes");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+            {
+                StatusCode = StatusCodes.Status500InternalServerError,
+                Message = "An error occurred while fetching parsed resumes.",
+                Details = ex.Message
+            });
+        }
+    }
+
+    /// <summary>
     /// Renders a resume with one or more specified templates and returns HTML previews.
     /// </summary>
     /// <param name="request">The render request containing resume ID and template IDs.</param>

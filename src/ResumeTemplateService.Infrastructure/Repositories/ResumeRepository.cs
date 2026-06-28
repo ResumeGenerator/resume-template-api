@@ -127,6 +127,42 @@ public class ResumeRepository : IResumeRepository
         }
     }
 
+    public async Task<(IReadOnlyCollection<string> DocumentsJson, long Total)> ListParsedDocumentsJsonAsync(
+        int limit,
+        int skip,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var filter = Builders<BsonDocument>.Filter.Empty;
+            var sort = Builders<BsonDocument>.Sort
+                .Descending("updatedAt")
+                .Descending("createdAt")
+                .Descending("_id");
+            var jsonWriterSettings = new JsonWriterSettings
+            {
+                OutputMode = JsonOutputMode.RelaxedExtendedJson
+            };
+
+            var total = await _collection.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
+            var documents = await _collection
+                .Find(filter)
+                .Sort(sort)
+                .Skip(skip)
+                .Limit(limit)
+                .ToListAsync(cancellationToken);
+
+            return (
+                documents.Select(document => document.ToJson(jsonWriterSettings)).ToList(),
+                total);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error listing parsed resume documents");
+            throw;
+        }
+    }
+
     public async Task<string> GetTemplateIdAsync(string id, CancellationToken cancellationToken = default)
     {
         try

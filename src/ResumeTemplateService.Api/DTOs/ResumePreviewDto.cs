@@ -22,6 +22,32 @@ public class RenderResumePdfRequest
 }
 
 /// <summary>
+/// Paged parsed resume list response.
+/// </summary>
+public class ParsedResumeListResponse
+{
+    /// <summary>
+    /// Maximum number of parsed resumes requested.
+    /// </summary>
+    public int Limit { get; set; }
+
+    /// <summary>
+    /// Number of parsed resumes skipped.
+    /// </summary>
+    public int Skip { get; set; }
+
+    /// <summary>
+    /// Total parsed resume count.
+    /// </summary>
+    public long Total { get; set; }
+
+    /// <summary>
+    /// Parsed resume documents.
+    /// </summary>
+    public IReadOnlyCollection<JsonElement> Resumes { get; set; } = Array.Empty<JsonElement>();
+}
+
+/// <summary>
 /// Request to save edited resume content and render an HTML preview.
 /// </summary>
 public class SaveEditedResumePreviewRequest
