@@ -78,6 +78,35 @@ public class ResumeRepository : IResumeRepository
         }
     }
 
+    public async Task<ResumeProfile?> GetParsedByIdAsync(
+        string id,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Fetching parsed resume with id: {ResumeId}", id);
+
+            var document = await GetParsedResumeDocumentAsync(id, cancellationToken);
+            var resume = document == null ? null : MapDocument(document);
+
+            if (resume != null)
+            {
+                _logger.LogInformation("Parsed resume found: {ResumeId}", id);
+            }
+            else
+            {
+                _logger.LogWarning("Parsed resume not found: {ResumeId}", id);
+            }
+
+            return resume;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching parsed resume with id: {ResumeId}", id);
+            throw;
+        }
+    }
+
     public async Task<string> GetTemplateIdAsync(string id, CancellationToken cancellationToken = default)
     {
         try
@@ -94,6 +123,26 @@ public class ResumeRepository : IResumeRepository
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching template id for resume: {ResumeId}", id);
+            throw;
+        }
+    }
+
+    public async Task<string> GetParsedTemplateIdAsync(string id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var document = await GetParsedResumeDocumentAsync(id, cancellationToken);
+            if (document == null)
+            {
+                return string.Empty;
+            }
+
+            var profile = GetDocument(document, "profile");
+            return profile is null ? string.Empty : GetString(profile, "template");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching parsed template id for resume: {ResumeId}", id);
             throw;
         }
     }
@@ -161,6 +210,14 @@ public class ResumeRepository : IResumeRepository
             return editedDocument;
         }
 
+        var filter = BuildIdFilter(id);
+        return await _collection.Find(filter).FirstOrDefaultAsync(cancellationToken);
+    }
+
+    private async Task<BsonDocument?> GetParsedResumeDocumentAsync(
+        string id,
+        CancellationToken cancellationToken = default)
+    {
         var filter = BuildIdFilter(id);
         return await _collection.Find(filter).FirstOrDefaultAsync(cancellationToken);
     }

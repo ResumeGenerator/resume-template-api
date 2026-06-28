@@ -208,11 +208,11 @@ public class ResumesController : ControllerBase
     }
 
     /// <summary>
-    /// Renders the latest resume copy as HTML.
+    /// Renders a parsed resume as HTML.
     /// </summary>
     /// <param name="resumeId">The parsed resume id.</param>
     /// <param name="templateId">Optional template id. If omitted, the template saved in profile.template is used.</param>
-    /// <returns>The rendered HTML for the latest edited or parsed resume.</returns>
+    /// <returns>The rendered HTML for the parsed resume.</returns>
     [HttpGet("{resumeId}/html")]
     [ProducesResponseType(typeof(RenderResumeHtmlResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
@@ -234,7 +234,7 @@ public class ResumesController : ControllerBase
 
             var normalizedResumeId = resumeId.Trim();
             var resolvedTemplateId = string.IsNullOrWhiteSpace(templateId)
-                ? await _resumeRepository.GetTemplateIdAsync(normalizedResumeId, HttpContext.RequestAborted)
+                ? await _resumeRepository.GetParsedTemplateIdAsync(normalizedResumeId, HttpContext.RequestAborted)
                 : templateId.Trim();
 
             if (string.IsNullOrWhiteSpace(resolvedTemplateId))
@@ -247,10 +247,12 @@ public class ResumesController : ControllerBase
                 });
             }
 
-            var resumeProfile = await _resumeRepository.GetByIdAsync(normalizedResumeId);
+            var resumeProfile = await _resumeRepository.GetParsedByIdAsync(
+                normalizedResumeId,
+                HttpContext.RequestAborted);
             if (resumeProfile == null)
             {
-                throw new InvalidOperationException($"Resume with id '{normalizedResumeId}' not found.");
+                throw new InvalidOperationException($"Parsed resume with id '{normalizedResumeId}' not found.");
             }
 
             if (!await _templateRenderer.TemplateExistsAsync(resolvedTemplateId))
