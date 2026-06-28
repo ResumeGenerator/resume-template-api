@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -133,6 +134,114 @@ public class ResumesController : ControllerBase
                 Details = ex.Message
             };
             return StatusCode(StatusCodes.Status500InternalServerError, error);
+        }
+    }
+
+    /// <summary>
+    /// Saves edited resume content and returns an HTML preview for the selected template.
+    /// </summary>
+    /// <param name="request">The edited resume content and template to render.</param>
+    /// <returns>The rendered HTML preview for the saved edited resume.</returns>
+    [HttpPost("edited/preview")]
+    [ProducesResponseType(typeof(SaveEditedResumePreviewResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> SaveEditedResumePreview([FromBody] SaveEditedResumePreviewRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.ResumeId))
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = "ResumeId is required.",
+                    Details = "The 'resumeId' field cannot be empty."
+                });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.TemplateId))
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = "TemplateId is required.",
+                    Details = "The 'templateId' field cannot be empty."
+                });
+            }
+
+            var editedDocument = GetEditedDocument(request);
+            if (editedDocument.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = "Edited resume document is required.",
+                    Details = "Provide the edited content in the 'document', 'content', or 'contents' field."
+                });
+            }
+
+            if (editedDocument.ValueKind != JsonValueKind.Object)
+            {
+                return BadRequest(new ErrorResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = "Edited resume document must be a JSON object.",
+                    Details = "The edited content cannot be an array, string, number, boolean, or null."
+                });
+            }
+
+            var resumeId = request.ResumeId.Trim();
+            var templateId = request.TemplateId.Trim();
+
+            _logger.LogInformation(
+                "Saving edited resume preview - ResumeId: {ResumeId}, TemplateId: {TemplateId}",
+                resumeId,
+                templateId);
+
+            if (!await _resumeRepository.ExistsAsync(resumeId))
+            {
+                throw new InvalidOperationException($"Resume with id '{resumeId}' not found.");
+            }
+
+            if (!await _templateRenderer.TemplateExistsAsync(templateId))
+            {
+                throw new InvalidOperationException($"Template '{templateId}' not found.");
+            }
+
+            var resumeProfile = await _resumeRepository.SaveEditedAsync(
+                resumeId,
+                editedDocument.GetRawText(),
+                HttpContext.RequestAborted);
+            var viewModel = _resumeMapper.Map(resumeProfile);
+            var html = await _templateRenderer.RenderAsync(templateId, viewModel);
+
+            return Ok(new SaveEditedResumePreviewResponse
+            {
+                ResumeId = resumeId,
+                TemplateId = templateId,
+                Html = html
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Resume or template not found while saving edited preview");
+            return NotFound(new ErrorResponse
+            {
+                StatusCode = StatusCodes.Status404NotFound,
+                Message = ex.Message
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error saving edited resume preview");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+            {
+                StatusCode = StatusCodes.Status500InternalServerError,
+                Message = "An error occurred while saving and rendering the edited resume preview.",
+                Details = ex.Message
+            });
         }
     }
 
@@ -313,6 +422,21 @@ public class ResumesController : ControllerBase
             .Select(templateId => templateId.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    private static JsonElement GetEditedDocument(SaveEditedResumePreviewRequest request)
+    {
+        if (request.Document.ValueKind is not JsonValueKind.Undefined and not JsonValueKind.Null)
+        {
+            return request.Document;
+        }
+
+        if (request.Content.ValueKind is not JsonValueKind.Undefined and not JsonValueKind.Null)
+        {
+            return request.Content;
+        }
+
+        return request.Contents;
     }
 
     private static string Slugify(string value)

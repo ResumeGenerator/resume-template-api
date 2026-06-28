@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace ResumeTemplateService.Api.DTOs;
 
 public class RenderResumePreviewRequest
@@ -23,6 +25,22 @@ public class RenderResumeWordRequest
 {
     public string ResumeId { get; set; } = null!;
     public string TemplateId { get; set; } = null!;
+}
+
+public class SaveEditedResumePreviewRequest
+{
+    public string ResumeId { get; set; } = null!;
+    public string TemplateId { get; set; } = null!;
+    public JsonElement Document { get; set; }
+    public JsonElement Content { get; set; }
+    public JsonElement Contents { get; set; }
+}
+
+public class SaveEditedResumePreviewResponse
+{
+    public string ResumeId { get; set; } = null!;
+    public string TemplateId { get; set; } = null!;
+    public string Html { get; set; } = null!;
 }
 
 public class RenderedTemplateDto
