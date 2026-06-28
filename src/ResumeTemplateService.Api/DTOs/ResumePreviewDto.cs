@@ -42,9 +42,23 @@ public class ParsedResumeListResponse
     public long Total { get; set; }
 
     /// <summary>
-    /// Parsed resume documents.
+    /// Parsed resume summaries.
     /// </summary>
-    public IReadOnlyCollection<JsonElement> Resumes { get; set; } = Array.Empty<JsonElement>();
+    public IReadOnlyCollection<ParsedResumeSummaryDto> Resumes { get; set; } = Array.Empty<ParsedResumeSummaryDto>();
+}
+
+/// <summary>
+/// Parsed resume summary for list views.
+/// </summary>
+public class ParsedResumeSummaryDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string Filename { get; set; } = string.Empty;
+    public string? CandidateName { get; set; }
+    public string? CandidateEmail { get; set; }
+    public string? CurrentTitle { get; set; }
+    public string? CreatedAt { get; set; }
+    public string? UpdatedAt { get; set; }
 }
 
 /// <summary>

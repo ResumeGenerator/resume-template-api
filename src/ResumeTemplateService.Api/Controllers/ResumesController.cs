@@ -76,7 +76,7 @@ public class ResumesController : ControllerBase
             }
 
             var normalizedLimit = Math.Min(limit, 500);
-            var (documentsJson, total) = await _resumeRepository.ListParsedDocumentsJsonAsync(
+            var (resumes, total) = await _resumeRepository.ListParsedResumeSummariesAsync(
                 normalizedLimit,
                 skip,
                 HttpContext.RequestAborted);
@@ -86,7 +86,16 @@ public class ResumesController : ControllerBase
                 Limit = normalizedLimit,
                 Skip = skip,
                 Total = total,
-                Resumes = documentsJson.Select(ToJsonElement).ToList()
+                Resumes = resumes.Select(resume => new ParsedResumeSummaryDto
+                {
+                    Id = resume.Id,
+                    Filename = resume.Filename,
+                    CandidateName = resume.CandidateName,
+                    CandidateEmail = resume.CandidateEmail,
+                    CurrentTitle = resume.CurrentTitle,
+                    CreatedAt = resume.CreatedAt,
+                    UpdatedAt = resume.UpdatedAt
+                }).ToList()
             });
         }
         catch (Exception ex)

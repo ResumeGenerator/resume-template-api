@@ -127,7 +127,7 @@ public class ResumeRepository : IResumeRepository
         }
     }
 
-    public async Task<(IReadOnlyCollection<string> DocumentsJson, long Total)> ListParsedDocumentsJsonAsync(
+    public async Task<(IReadOnlyCollection<ParsedResumeSummary> Resumes, long Total)> ListParsedResumeSummariesAsync(
         int limit,
         int skip,
         CancellationToken cancellationToken = default)
@@ -139,11 +139,6 @@ public class ResumeRepository : IResumeRepository
                 .Descending("updatedAt")
                 .Descending("createdAt")
                 .Descending("_id");
-            var jsonWriterSettings = new JsonWriterSettings
-            {
-                OutputMode = JsonOutputMode.RelaxedExtendedJson
-            };
-
             var total = await _collection.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
             var documents = await _collection
                 .Find(filter)
@@ -153,7 +148,7 @@ public class ResumeRepository : IResumeRepository
                 .ToListAsync(cancellationToken);
 
             return (
-                documents.Select(document => document.ToJson(jsonWriterSettings)).ToList(),
+                documents.Select(MapParsedResumeSummary).ToList(),
                 total);
         }
         catch (Exception ex)
@@ -161,6 +156,24 @@ public class ResumeRepository : IResumeRepository
             _logger.LogError(ex, "Error listing parsed resume documents");
             throw;
         }
+    }
+
+    private static ParsedResumeSummary MapParsedResumeSummary(BsonDocument document)
+    {
+        var profile = GetDocument(document, "profile") ?? new BsonDocument();
+        var data = GetDocument(profile, "data") ?? new BsonDocument();
+        var metadata = GetDocument(document, "metadata") ?? new BsonDocument();
+
+        return new ParsedResumeSummary
+        {
+            Id = GetDocumentId(document),
+            Filename = GetString(metadata, "filename"),
+            CandidateName = NullIfEmpty(GetString(data, "name")),
+            CandidateEmail = NullIfEmpty(GetString(data, "email")),
+            CurrentTitle = NullIfEmpty(GetString(data, "title")),
+            CreatedAt = GetDateTimeString(document, "createdAt"),
+            UpdatedAt = GetDateTimeString(document, "updatedAt")
+        };
     }
 
     public async Task<string> GetTemplateIdAsync(string id, CancellationToken cancellationToken = default)
@@ -705,6 +718,18 @@ public class ResumeRepository : IResumeRepository
     private static DateTime GetDateTime(BsonDocument document, string name)
     {
         return document.TryGetValue(name, out var value) && value.IsValidDateTime ? value.ToUniversalTime() : DateTime.UtcNow;
+    }
+
+    private static string? GetDateTimeString(BsonDocument document, string name)
+    {
+        return document.TryGetValue(name, out var value) && value.IsValidDateTime
+            ? value.ToUniversalTime().ToString("O")
+            : null;
+    }
+
+    private static string? NullIfEmpty(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 
     private static string GetOnlineProfileUrl(BsonDocument candidate, string platform)
