@@ -7,6 +7,7 @@ using HealthChecks.MongoDb;
 using ResumeTemplateService.Api.Extensions;
 using ResumeTemplateService.Api.Middleware;
 using System.Reflection;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -95,6 +96,13 @@ builder.Services.AddSwaggerGen(options =>
     {
         options.IncludeXmlComments(xmlPath);
     }
+
+    options.MapType<JsonElement>(() => new OpenApiSchema
+    {
+        Type = "object",
+        AdditionalPropertiesAllowed = true,
+        Description = "Flexible JSON object"
+    });
 });
 
 // CORS
@@ -137,10 +145,7 @@ app.UseCors("AllowAngularApp");
 app.UseHealthChecksEndpoint();
 
 // Swagger
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwaggerSetup();
-}
+app.UseSwaggerSetup();
 
 // Authorization
 app.UseAuthorization();

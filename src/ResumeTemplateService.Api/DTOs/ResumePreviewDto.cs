@@ -27,19 +27,55 @@ public class RenderResumeWordRequest
     public string TemplateId { get; set; } = null!;
 }
 
+/// <summary>
+/// Request to save edited resume content and render an HTML preview.
+/// </summary>
 public class SaveEditedResumePreviewRequest
 {
+    /// <summary>
+    /// Parsed resume id from the source parsed_resumes collection.
+    /// </summary>
     public string ResumeId { get; set; } = null!;
+
+    /// <summary>
+    /// Template id to use for the rendered HTML preview.
+    /// </summary>
     public string TemplateId { get; set; } = null!;
+
+    /// <summary>
+    /// Edited resume document, profile wrapper, or profile.data object.
+    /// </summary>
     public JsonElement Document { get; set; }
+
+    /// <summary>
+    /// Alternate edited resume payload field accepted from UI clients.
+    /// </summary>
     public JsonElement Content { get; set; }
+
+    /// <summary>
+    /// Alternate edited resume payload field accepted from UI clients.
+    /// </summary>
     public JsonElement Contents { get; set; }
 }
 
+/// <summary>
+/// Response containing the saved edited resume preview HTML.
+/// </summary>
 public class SaveEditedResumePreviewResponse
 {
+    /// <summary>
+    /// Parsed resume id used to save the edited copy.
+    /// </summary>
     public string ResumeId { get; set; } = null!;
+
+    /// <summary>
+    /// Template id used to render the HTML.
+    /// </summary>
     public string TemplateId { get; set; } = null!;
+
+    /// <summary>
+    /// Rendered HTML for the edited resume and selected template.
+    /// </summary>
     public string Html { get; set; } = null!;
 }
 

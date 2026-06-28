@@ -12,7 +12,7 @@ public static class ApplicationBuilderExtensions
         app.UseSwaggerUI(c =>
         {
             c.SwaggerEndpoint("/swagger/v1/swagger.json", "Resume Template Service API v1");
-            c.RoutePrefix = string.Empty;
+            c.RoutePrefix = "swagger";
             c.DocumentTitle = "Resume Template Service - Swagger UI";
             c.DefaultModelsExpandDepth(1);
             c.DefaultModelExpandDepth(1);
