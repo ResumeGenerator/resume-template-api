@@ -108,6 +108,11 @@ public class RenderResumeHtmlResponse
     /// Rendered HTML.
     /// </summary>
     public string Html { get; set; } = null!;
+
+    /// <summary>
+    /// Parsed resume document data for UI binding.
+    /// </summary>
+    public JsonElement Data { get; set; }
 }
 
 public class RenderedTemplateDto

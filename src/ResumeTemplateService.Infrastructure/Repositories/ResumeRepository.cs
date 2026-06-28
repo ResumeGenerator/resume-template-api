@@ -1,6 +1,7 @@
 using MongoDB.Driver;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
+using MongoDB.Bson.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using ResumeTemplateService.Application.Interfaces;
@@ -103,6 +104,25 @@ public class ResumeRepository : IResumeRepository
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching parsed resume with id: {ResumeId}", id);
+            throw;
+        }
+    }
+
+    public async Task<string?> GetParsedDocumentJsonAsync(
+        string id,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var document = await GetParsedResumeDocumentAsync(id, cancellationToken);
+            return document?.ToJson(new JsonWriterSettings
+            {
+                OutputMode = JsonOutputMode.RelaxedExtendedJson
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching parsed resume document JSON with id: {ResumeId}", id);
             throw;
         }
     }

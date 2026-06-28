@@ -262,12 +262,16 @@ public class ResumesController : ControllerBase
 
             var viewModel = _resumeMapper.Map(resumeProfile);
             var html = await _templateRenderer.RenderAsync(resolvedTemplateId, viewModel);
+            var parsedDocumentJson = await _resumeRepository.GetParsedDocumentJsonAsync(
+                normalizedResumeId,
+                HttpContext.RequestAborted);
 
             return Ok(new RenderResumeHtmlResponse
             {
                 ResumeId = normalizedResumeId,
                 TemplateId = resolvedTemplateId,
-                Html = html
+                Html = html,
+                Data = ToJsonElement(parsedDocumentJson)
             });
         }
         catch (InvalidOperationException ex)
@@ -511,6 +515,17 @@ public class ResumesController : ControllerBase
         }
 
         return request.Contents;
+    }
+
+    private static JsonElement ToJsonElement(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return default;
+        }
+
+        using var document = JsonDocument.Parse(json);
+        return document.RootElement.Clone();
     }
 
     private static string Slugify(string value)
