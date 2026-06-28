@@ -144,6 +144,23 @@ app.UseCors("AllowAngularApp");
 // Health Checks
 app.UseHealthChecksEndpoint();
 
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.Equals("/swagger", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.Redirect("/swagger/");
+        return;
+    }
+
+    if (HttpMethods.IsOptions(context.Request.Method))
+    {
+        context.Response.StatusCode = StatusCodes.Status204NoContent;
+        return;
+    }
+
+    await next();
+});
+
 // Swagger
 app.UseSwaggerSetup();
 
@@ -152,8 +169,6 @@ app.UseAuthorization();
 
 // Endpoints
 app.MapGet("/live", () => Results.Ok(new { status = "alive" }));
-app.MapMethods("/{*path}", new[] { "OPTIONS" }, () => Results.NoContent())
-    .RequireCors("AllowAngularApp");
 app.MapControllers();
 app.MapHealthChecks("/health");
 
