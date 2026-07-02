@@ -169,6 +169,14 @@ public class TemplateDto
     public string PreviewUrl { get; set; } = string.Empty;
 }
 
+public class ShortResumeTemplateDto
+{
+    public string TemplateId { get; set; } = null!;
+    public string TemplateName { get; set; } = null!;
+    public string ShortDescription { get; set; } = string.Empty;
+    public string? PreviewThumbnailUrl { get; set; }
+}
+
 public class ErrorResponse
 {
     public int StatusCode { get; set; }
